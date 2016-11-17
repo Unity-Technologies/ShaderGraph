@@ -38,6 +38,9 @@ namespace UnityEditor.MaterialGraph.Drawing
         protected EventPropagation DoContextMenu(Event evt, Object customData)
         {
             var gm = new GenericMenu();
+
+            var canvasPos = contentViewContainer.GlobalToLocal(evt.mousePosition);
+
             foreach (Type type in Assembly.GetAssembly(typeof(AbstractMaterialNode)).GetTypes())
             {
                 if (type.IsClass && !type.IsAbstract && (type.IsSubclassOf(typeof(AbstractMaterialNode))))
@@ -45,7 +48,7 @@ namespace UnityEditor.MaterialGraph.Drawing
                     var attrs = type.GetCustomAttributes(typeof(TitleAttribute), false) as TitleAttribute[];
                     if (attrs != null && attrs.Length > 0 && CanAddToNodeMenu(type))
                     {
-                        gm.AddItem(new GUIContent(attrs[0].m_Title), false, AddNode, new AddNodeCreationObject(type, evt.mousePosition));
+                        gm.AddItem(new GUIContent(attrs[0].m_Title), false, AddNode, new AddNodeCreationObject(type, canvasPos));
                     }
                 }
             }
@@ -88,6 +91,7 @@ namespace UnityEditor.MaterialGraph.Drawing
             if (node == null)
                 return;
             var drawstate = node.drawState;
+            
             drawstate.position = new Rect(posObj.m_Pos.x, posObj.m_Pos.y, 0, 0);
             node.drawState = drawstate;
 

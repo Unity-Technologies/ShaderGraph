@@ -48,7 +48,8 @@ namespace UnityEditor.Graphing.Drawing
             m_GraphView = CreateGraphView();
             m_GraphView.name = "Graph View";
             var source = CreateDataSource();
-            source.Initialize(m_LastSelection);
+            if (m_LastSelection != null)
+                source.Initialize(m_LastSelection);
 
             var titleBarData = CreateInstance<TitleBarDrawData>();
             titleBarData.title = m_LastSelection != null ? m_LastSelection.GetScriptableObject().name : "";
