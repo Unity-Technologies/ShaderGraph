@@ -14,6 +14,8 @@ namespace UnityEditor.VFXEditor.Drawing
         public VFXGraphView()
         {
             AddManipulator(new ContextualMenu(DoContextMenu));
+
+            dataMapper[typeof(VFXContextDrawData)] = typeof(VFXContextDrawer);
         }
 
         protected EventPropagation DoContextMenu(Event evt, Object customData)

@@ -1,93 +1,14 @@
-NodeDrawer {
+VFXContextDrawer {
 	flex-direction: column;
 }
 
-HeaderDrawer {
-    flex-direction: row;
-}
-
-HeaderDrawer #title {
+VFXContextDrawer #title {
+	background-color: #404040;
     text-color: #FFFFFF;
 	width: 200;
 	text-alignment: middle-center;
 }
-
-HeaderDrawer #expandButton {
-    text-color: #FFFFFF;
-    position-type: absolute;
-    position-top: 0;
-    position-left: 5;
-    width: 10;
-	text-alignment: middle-center;
-	height: 14;
+VFXContextDrawer #container {
+	height: 50;
+	background-color: #202020;
 }
-
-NodeDrawer #slots {
-	margin-top: 15;
-	flex-direction: row;
-	background-color: #444;
-	width: 200;
-}
-
-NodeDrawer #slots #input{
-	flex:1;
-}
-
-NodeDrawer #slots #output {
-	flex:1;
-}
-
-/* NodeAnchor */
-
-NodeDrawer #slots NodeAnchor {
-	align-items: center;
-}
-
-NodeDrawer #slots #input NodeAnchor {
-	flex-direction: row;
-}
-
-NodeDrawer #slots #output NodeAnchor {
-	flex-direction: row-reverse;
-}
-
-/* NodeAnchor #connector */
-
-NodeAnchor #connector {
-	background-color:#FF0;
-	border-color:#FF0;
-	/* width is currently hard-coded */
-	border-width: 4;
-	margin-left: 5;
-    margin-right: 5;
-}
-
-NodeAnchor #connector.anchorHighlight {
-	background-color:#00F;
-}
-
-/* NodeAnchor #type */
-
-NodeDrawer #slots NodeAnchor #type {
-	text-color:#FFF;
-	flex:1;
-}
-
-NodeDrawer #slots #input NodeAnchor #type {
-    text-alignment: middle-left;
-}
-
-NodeDrawer #slots #output NodeAnchor #type {
-    text-alignment: middle-right;
-}
-
-NodeDrawer #controls {
-	flex-direction: column;
-	padding-bottom: 2;
-	background-color: #444;
-}
-
-NodeDrawer #controls #element{
-	flex-direction: column;
-}
-

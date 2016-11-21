@@ -16,11 +16,11 @@ namespace UnityEditor.VFXEditor.Drawing
         private IGraph m_Graph = new SerializableGraph();
     }
 
-    public class VFXGraphDataSource : AbstractGraphDataSource
+    public class VFXGraphDataSource : SerializedGraphDataSource
     {
         protected override void AddTypeMappings()
         {
-            AddTypeMapping(typeof(VFXContextNode), typeof(NodeDrawData));
+            AddTypeMapping(typeof(VFXContextNode), typeof(VFXContextDrawData));
         }
     }
 

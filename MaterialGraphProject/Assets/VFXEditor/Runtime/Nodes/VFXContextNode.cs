@@ -40,11 +40,18 @@ namespace UnityEngine.VFXEditor
             get { return m_Type; }
         }
 
+       /* public VFXFlowSlot GetInputFlowSlot()
+        {
+            return m_InputSlot;
+        }
+
+        public VFXFlowSlot GetOutputFlowSlot();*/
+
         [SerializeField]
         private VFXContextType m_Type;
 
         // Not serialized. Reconstructed at initialization
-        //private VFXFlowSlot m_InputSlot;
-        //private VFXFlowSlot m_OutputSlot; // Can be null
+       // private VFXFlowSlot m_InputSlot;
+      //  private VFXFlowSlot m_OutputSlot; // Can be null
     }
 }
