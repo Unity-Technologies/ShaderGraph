@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Graphing;
 
 namespace UnityEngine.VFXEditor
 {
@@ -20,9 +21,7 @@ namespace UnityEngine.VFXEditor
     public class VFXContextNode : VFXNode<VFXSystemNode, VFXNode>
     {
         private VFXContextNode()
-        {
-            // Create slot
-        }
+        {}
 
         public VFXContextNode(VFXContextType type) : this()
         {
@@ -33,6 +32,13 @@ namespace UnityEngine.VFXEditor
                 case VFXContextType.kUpdate:    name = "Update"; break;
                 case VFXContextType.kOutput:    name = "Output"; break;
             }
+
+            m_InputSlot = new VFXFlowSlot(this,SlotType.Input);
+            m_OutputSlot = m_Type != VFXContextType.kOutput ? new VFXFlowSlot(this,SlotType.Output) : null;
+
+            AddSlot(m_InputSlot);
+            if (m_OutputSlot != null)
+                AddSlot(m_OutputSlot);
         }
 
         public VFXContextType ContextType
@@ -40,18 +46,20 @@ namespace UnityEngine.VFXEditor
             get { return m_Type; }
         }
 
-       /* public VFXFlowSlot GetInputFlowSlot()
+        public VFXFlowSlot GetInputFlowSlot()
         {
             return m_InputSlot;
         }
 
-        public VFXFlowSlot GetOutputFlowSlot();*/
+        public VFXFlowSlot GetOutputFlowSlot()
+        {
+            return m_OutputSlot;
+        }
 
         [SerializeField]
         private VFXContextType m_Type;
 
-        // Not serialized. Reconstructed at initialization
-       // private VFXFlowSlot m_InputSlot;
-      //  private VFXFlowSlot m_OutputSlot; // Can be null
+        private VFXFlowSlot m_InputSlot;
+        private VFXFlowSlot m_OutputSlot; // Can be null
     }
 }

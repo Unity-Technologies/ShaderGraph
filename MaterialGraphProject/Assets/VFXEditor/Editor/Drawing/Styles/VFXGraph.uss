@@ -8,7 +8,28 @@ VFXContextDrawer #title {
 	width: 200;
 	text-alignment: middle-center;
 }
+
 VFXContextDrawer #container {
 	height: 50;
 	background-color: #202020;
+}
+
+VFXContextDrawer #input {
+	position-top: -89;
+	height: 24;
+	width: 24;
+    position-left: 88;
+	background-color: #A0A0A0;
+}
+
+VFXContextDrawer #output {
+	position-top: 26;
+	height: 24;
+	width: 24;
+    position-left: 88;
+	background-color: #A0A0A0;
+}
+
+VFXContextDrawer #connector.anchorHighlight {
+	background-color:#00F;
 }

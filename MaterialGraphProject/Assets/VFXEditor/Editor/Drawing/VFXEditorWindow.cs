@@ -3,6 +3,7 @@ using UnityEditor.Graphing.Drawing;
 using UnityEngine;
 using UnityEngine.Graphing;
 using UnityEngine.VFXEditor;
+using Edge = RMGUI.GraphView.Edge;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
@@ -21,6 +22,7 @@ namespace UnityEditor.VFXEditor.Drawing
         protected override void AddTypeMappings()
         {
             AddTypeMapping(typeof(VFXContextNode), typeof(VFXContextDrawData));
+            AddTypeMapping(typeof(EdgeDrawData), typeof(Edge));
         }
     }
 

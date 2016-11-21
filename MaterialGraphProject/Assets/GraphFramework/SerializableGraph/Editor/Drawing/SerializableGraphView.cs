@@ -23,6 +23,14 @@ namespace UnityEditor.Graphing.Drawing
             AddManipulator(new ClickSelector());
             AddDecorator(new GridBackground());
 
+            AddManipulator(new ShortcutHandler(
+                new Dictionary<Event, ShortcutDelegate>
+				{
+					{Event.KeyboardEvent("a"), FrameAll},
+					{Event.KeyboardEvent("f"), FrameSelection},
+					{Event.KeyboardEvent("o"), FrameOrigin},
+				}));
+
             dataMapper[typeof(AbstractNodeDrawData)] = typeof(AbstractNodeDrawer);
             dataMapper[typeof(NodeDrawData)] = typeof(NodeDrawer);
             dataMapper[typeof(HeaderDrawData)] = typeof(HeaderDrawer);

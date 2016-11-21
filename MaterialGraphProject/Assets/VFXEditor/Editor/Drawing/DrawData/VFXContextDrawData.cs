@@ -1,4 +1,5 @@
 using System;
+using RMGUI.GraphView;
 using UnityEditor.Graphing.Drawing;
 using UnityEngine;
 using UnityEngine.Graphing;
@@ -9,6 +10,19 @@ namespace UnityEditor.VFXEditor.Drawing
     [Serializable]
     public class VFXContextDrawData : AbstractNodeDrawData
     {
+        private AnchorDrawData m_InputAnchor;
+        private AnchorDrawData m_OutputAnchor;
+
+        public AnchorDrawData inputAnchor
+        {
+            get { return m_InputAnchor; }
+        }
+
+        public AnchorDrawData outputAnchor
+        {
+            get { return m_OutputAnchor; }
+        }
+
         public string title
         {
             get { return node.name; }
@@ -34,19 +48,21 @@ namespace UnityEditor.VFXEditor.Drawing
 
             var contextNode = (VFXContextNode)node;
 
-           // var inputFlow = contextNode.GetInputFlowSlot();
-           // var outputFlow = contextNode.GetOutputFlowSlot();
+            var inputFlow = contextNode.GetInputFlowSlot();
+            var outputFlow = contextNode.GetOutputFlowSlot();
 
-          /*  var data = CreateInstance<AnchorDrawData>();
-            data.Initialize(inputFlow); 
-            m_Children.Add(data);
+            m_InputAnchor = CreateInstance<AnchorDrawData>();
+            m_InputAnchor.Initialize(inputFlow);
+            m_InputAnchor.orientation = Orientation.Vertical;
+            m_Children.Add(m_InputAnchor);
 
             if (outputFlow != null)
             {
-                data = CreateInstance<AnchorDrawData>();
-                data.Initialize(outputFlow);
-                m_Children.Add(data);
-            }*/
+                m_OutputAnchor = CreateInstance<AnchorDrawData>();
+                m_OutputAnchor.Initialize(outputFlow);
+                m_OutputAnchor.orientation = Orientation.Vertical;
+                m_Children.Add(m_OutputAnchor);
+            }
         }
     }
 }
