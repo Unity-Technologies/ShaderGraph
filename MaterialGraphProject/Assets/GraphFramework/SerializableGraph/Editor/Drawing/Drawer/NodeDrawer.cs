@@ -7,7 +7,7 @@ using UnityEditor.Graphing.Util;
 
 namespace UnityEditor.Graphing.Drawing
 {
-    public class NodeDrawer : GraphElement
+    public class NodeDrawer : AbstractNodeDrawer
     {
         HeaderDrawer m_HeaderDrawer;
         HeaderDrawData m_HeaderData;
@@ -15,7 +15,6 @@ namespace UnityEditor.Graphing.Drawing
         List<AnchorDrawData> m_CurrentAnchors;
         VisualContainer m_ControlsContainer;
         List<ControlDrawData> m_CurrentControlDrawData;
-        bool m_CurrentExpanded;
 
         public NodeDrawer()
         {
@@ -166,22 +165,9 @@ namespace UnityEditor.Graphing.Drawing
                 return;
             }
 
-            if (!nodeData.expanded)
-            {
-                if (!classList.Contains("collapsed"))
-                    AddToClassList("collapsed");
-            }
-            else
-            {
-                if (classList.Contains("collapsed"))
-                    RemoveFromClassList("collapsed");
-            }
-
             AddHeader(nodeData);
             AddSlots(nodeData);
             AddControls(nodeData);
-
-            m_CurrentExpanded = nodeData.expanded;
         }
     }
 }

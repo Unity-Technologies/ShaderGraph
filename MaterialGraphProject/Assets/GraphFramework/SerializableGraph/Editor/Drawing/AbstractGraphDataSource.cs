@@ -26,7 +26,7 @@ namespace UnityEditor.Graphing.Drawing
             NodeUtils.CollectNodesNodeFeedsInto(dependentNodes, inNode);
             foreach (var node in dependentNodes)
             {
-                var theElements = m_Elements.OfType<NodeDrawData>().ToList();
+                var theElements = m_Elements.OfType<AbstractNodeDrawData>().ToList();
                 var found = theElements.Where(x => x.node.guid == node.guid).ToList();
                 foreach (var drawableNodeData in found)
                     drawableNodeData.OnModified(scope);
@@ -39,7 +39,7 @@ namespace UnityEditor.Graphing.Drawing
         {
             // Find all nodes currently being drawn which are no longer in the graph (i.e. deleted)
             var deletedElements = m_Elements
-                .OfType<NodeDrawData>()
+                .OfType<AbstractNodeDrawData>()
                 .Where(nd => !graphAsset.graph.GetNodes<INode>().Contains(nd.node))
                 .OfType<GraphElementData>()
                 .ToList();
@@ -55,7 +55,7 @@ namespace UnityEditor.Graphing.Drawing
                 edgeData.input.Disconnect(edgeData);
 
                 var toNodeGuid = edgeData.edge.inputSlot.nodeGuid;
-                var toNode = m_Elements.OfType<NodeDrawData>().FirstOrDefault(nd => nd.node.guid == toNodeGuid);
+                var toNode = m_Elements.OfType<AbstractNodeDrawData>().FirstOrDefault(nd => nd.node.guid == toNodeGuid);
                 if (toNode != null)
                 {
                     // Make the input node (i.e. right side of the connection) re-render
@@ -71,17 +71,17 @@ namespace UnityEditor.Graphing.Drawing
                 m_Elements.Remove(deletedElement);
             }
 
-            var addedNodes = new List<NodeDrawData>();
+            var addedNodes = new List<AbstractNodeDrawData>();
 
             // Find all new nodes and mark for addition
             foreach (var node in graphAsset.graph.GetNodes<INode>())
             {
                 // Check whether node already exists
-                if (m_Elements.OfType<NodeDrawData>().Any(e => e.node == node))
+                if (m_Elements.OfType<AbstractNodeDrawData>().Any(e => e.node == node))
                     continue;
 
                 var type = MapType(node.GetType());
-                var nodeData = (NodeDrawData)CreateInstance(type);
+                var nodeData = (AbstractNodeDrawData)CreateInstance(type);
 
                 node.onModified += OnNodeChanged;
 
@@ -193,7 +193,7 @@ namespace UnityEditor.Graphing.Drawing
             UpdateData();
         }
 
-        public void RemoveElements(IEnumerable<NodeDrawData> nodes, IEnumerable<EdgeDrawData> edges)
+        public void RemoveElements(IEnumerable<AbstractNodeDrawData> nodes, IEnumerable<EdgeDrawData> edges)
         {
             graphAsset.graph.RemoveElements(nodes.Select(x => x.node), edges.Select(x => x.edge));
             graphAsset.graph.ValidateGraph();

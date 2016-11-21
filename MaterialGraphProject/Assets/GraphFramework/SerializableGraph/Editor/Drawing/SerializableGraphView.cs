@@ -23,6 +23,7 @@ namespace UnityEditor.Graphing.Drawing
             AddManipulator(new ClickSelector());
             AddDecorator(new GridBackground());
 
+            dataMapper[typeof(AbstractNodeDrawData)] = typeof(AbstractNodeDrawer);
             dataMapper[typeof(NodeDrawData)] = typeof(NodeDrawer);
             dataMapper[typeof(HeaderDrawData)] = typeof(HeaderDrawer);
         }
@@ -34,7 +35,7 @@ namespace UnityEditor.Graphing.Drawing
                 return EventPropagation.Stop;
 
             nodalViewData.RemoveElements(
-                selection.OfType<NodeDrawer>().Select(x => x.dataProvider as NodeDrawData),
+                selection.OfType<AbstractNodeDrawer>().Select(x => x.dataProvider as AbstractNodeDrawData),
                 selection.OfType<Edge>().Select(x => x.dataProvider as EdgeDrawData)
                 );
 

@@ -1,4 +1,4 @@
-NodeDrawer {
+AbstractNodeDrawer {
 	flex-direction: column;
 }
 
@@ -25,7 +25,7 @@ NodeDrawer #controls #element{
 	flex-direction: column;
 }
 
-NodeDrawer {
+AbstractNodeDrawer {
 	height: 26;
 }
 

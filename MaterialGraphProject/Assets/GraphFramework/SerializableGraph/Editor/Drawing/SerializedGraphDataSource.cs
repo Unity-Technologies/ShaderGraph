@@ -9,7 +9,7 @@ namespace UnityEditor.Graphing.Drawing
 
         protected override void AddTypeMappings()
         {
-            AddTypeMapping(typeof(SerializableNode), typeof(NodeDrawData));
+            AddTypeMapping(typeof(SerializableNode), typeof(AbstractNodeDrawData));
         }
     }
 }

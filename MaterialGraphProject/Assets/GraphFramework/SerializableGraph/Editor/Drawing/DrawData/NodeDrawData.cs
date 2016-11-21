@@ -5,49 +5,21 @@ using UnityEngine.Graphing;
 
 namespace UnityEditor.Graphing.Drawing
 {
-    public class NodeDrawData : GraphElementData
+    public class NodeDrawData : AbstractNodeDrawData
     {
         protected NodeDrawData()
         {}
-
-        public INode node { get; private set; }
-
-        public bool expanded = true;
-
-        protected List<GraphElementData> m_Children = new List<GraphElementData>();
-
-        public IEnumerable<GraphElementData> elements
-        {
-            get { return m_Children; }
-        }
-
-        public virtual void OnModified(ModificationScope scope)
-        {
-            expanded = node.drawState.expanded;
-        }
-
-        public void CommitChanges()
-        {
-            var drawData = node.drawState;
-            drawData.position = position;
-            node.drawState = drawData;
-        }
 
         protected virtual IEnumerable<GraphElementData> GetControlData()
         {
             return new ControlDrawData[0];
         }
 
-        public virtual void Initialize(INode inNode)
+        public override void Initialize(INode inNode)
         {
-            node = inNode;
-            capabilities |= Capabilities.Movable;
-
+            base.Initialize(inNode);
             if (node == null)
                 return;
-
-            name = inNode.name;
-            expanded = node.drawState.expanded;
 
             var m_HeaderData = CreateInstance<HeaderDrawData>();
             m_HeaderData.Initialize(inNode);
@@ -62,9 +34,6 @@ namespace UnityEditor.Graphing.Drawing
 
             var controlData = GetControlData();
             m_Children.AddRange(controlData);
-
-            position = new Rect(node.drawState.position.x, node.drawState.position.y, 0, 0);
-            //position
         }
     }
 }
