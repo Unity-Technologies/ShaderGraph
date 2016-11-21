@@ -160,7 +160,11 @@ namespace UnityEngine.Graphing
             //If we didn't find any connection, we fallback to GenerateDefaultInput if it's provided, generate a virtual edge to a virtual node (UV input for instance)
             if (foundEdges.Count == 0)
             {
-                var slot = GetNodeFromGuid(s.nodeGuid).FindInputSlot<ISlot>(s.slotId);
+                var iNode = GetNodeFromGuid(s.nodeGuid);
+                if (iNode == null)
+                    return foundEdges;
+
+                var slot = iNode.FindInputSlot<ISlot>(s.slotId);
                 if (slot is IGenerateDefaultInput)
                 {
                     var defaultInputProvider = slot as IGenerateDefaultInput;
