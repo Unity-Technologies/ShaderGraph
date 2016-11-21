@@ -129,13 +129,13 @@ namespace UnityEditor.Graphing.Drawing
                 {
                     var fromNode = graphAsset.graph.GetNodeFromGuid(edge.outputSlot.nodeGuid);
                     var fromSlot = fromNode.FindOutputSlot<ISlot>(edge.outputSlot.slotId);
-                    var sourceNode = m_Elements.OfType<NodeDrawData>().FirstOrDefault(x => x.node == fromNode);
+                    var sourceNode = m_Elements.OfType<AbstractNodeDrawData>().FirstOrDefault(x => x.node == fromNode);
                     var sourceAnchors = sourceNode.elements.OfType<AnchorDrawData>();
                     var sourceAnchor = sourceAnchors.FirstOrDefault(x => x.slot == fromSlot);
 
                     var toNode = graphAsset.graph.GetNodeFromGuid(edge.inputSlot.nodeGuid);
                     var toSlot = toNode.FindInputSlot<ISlot>(edge.inputSlot.slotId);
-                    var targetNode = m_Elements.OfType<NodeDrawData>().FirstOrDefault(x => x.node == toNode);
+                    var targetNode = m_Elements.OfType<AbstractNodeDrawData>().FirstOrDefault(x => x.node == toNode);
                     var targetAnchors = targetNode.elements.OfType<AnchorDrawData>();
                     var targetAnchor = targetAnchors.FirstOrDefault(x => x.slot == toSlot);
 
