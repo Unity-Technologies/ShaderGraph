@@ -21,36 +21,26 @@ namespace RMGUI.GraphView
 
 		protected static void GetTangents(Orientation orientation, Vector2 from, Vector2 to, out Vector3[] points, out Vector3[] tangents)
         {
-            bool invert = false;
-            if (from.x < to.x)
-            {
-                Vector3 t = to;
-                to = from;
-                from = t;
-                invert = true;
-            }
+            bool invert = orientation == Orientation.Horizontal ? from.x > to.x : from.y > to.y;
+            float inverse = invert ? -1.0f : 1.0f;
 
-            points = new Vector3[] {to, from};
             tangents = new Vector3[2];
+            points = new Vector3[] { from, to };
 
-            const float minTangent = 30;
+            float minTangent = Mathf.Min(Vector3.Distance(from,to) * 0.5f, 100.0f);
 
             float weight = .5f;
             float weight2 = 1 - weight;
-            float y = 0;
-
-            float cleverness = Mathf.Clamp01(((to - from).magnitude - 10) / 50);
 
             if (orientation == Orientation.Horizontal)
             {
-                tangents[0] = to + new Vector2((from.x - to.x) * weight + minTangent, y) * cleverness;
-                tangents[1] = from + new Vector2((from.x - to.x) * -weight2 - minTangent, -y) * cleverness;
+                tangents[0] = from + new Vector2((to.x - from.x) * weight * inverse + minTangent, 0);
+                tangents[1] = to + new Vector2((to.x - from.x) * -weight2 * inverse - minTangent, 0);
             }
             else
             {
-                float inverse = (invert) ? 1.0f : -1.0f;
-                tangents[0] = to + new Vector2(y, inverse * ((from.x - to.x) * weight + minTangent)) * cleverness;
-                tangents[1] = from + new Vector2(-y, inverse * ((from.x - to.x) * -weight2 - minTangent)) * cleverness;
+                tangents[0] = from + new Vector2(0, (to.y - from.y) * weight * inverse + minTangent);
+                tangents[1] = to + new Vector2(0, (to.y - from.y) * -weight2 * inverse - minTangent);
             }
         }
 
@@ -208,6 +198,9 @@ namespace RMGUI.GraphView
 
 			Vector3[] points, tangents;
 			GetTangents(orientation, from, to, out points, out tangents);
+            /*Handles.DrawLine(points[0], tangents[0]);
+            Handles.DrawLine(tangents[0], tangents[1]);
+            Handles.DrawLine(tangents[1], points[1]);*/
 			Handles.DrawBezier(points[0], points[1], tangents[0], tangents[1], edgeColor, null, 5f);
 
 			// little widget on the middle of the edge
