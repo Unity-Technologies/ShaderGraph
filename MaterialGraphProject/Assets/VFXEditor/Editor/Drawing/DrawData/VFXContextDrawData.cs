@@ -54,6 +54,7 @@ namespace UnityEditor.VFXEditor.Drawing
             m_InputAnchor = CreateInstance<AnchorDrawData>();
             m_InputAnchor.Initialize(inputFlow);
             m_InputAnchor.orientation = Orientation.Vertical;
+            m_InputAnchor.capabilities |= Capabilities.Floating;
             m_Children.Add(m_InputAnchor);
 
             if (outputFlow != null)
@@ -61,6 +62,7 @@ namespace UnityEditor.VFXEditor.Drawing
                 m_OutputAnchor = CreateInstance<AnchorDrawData>();
                 m_OutputAnchor.Initialize(outputFlow);
                 m_OutputAnchor.orientation = Orientation.Vertical;
+                m_OutputAnchor.capabilities |= Capabilities.Floating;
                 m_Children.Add(m_OutputAnchor);
             }
         }

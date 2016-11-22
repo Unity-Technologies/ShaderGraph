@@ -3,7 +3,7 @@ using UnityEditor.Graphing.Drawing;
 using UnityEngine;
 using UnityEngine.Graphing;
 using UnityEngine.VFXEditor;
-using Edge = RMGUI.GraphView.Edge;
+using Edge = UnityEngine.Graphing.Edge;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
@@ -14,7 +14,7 @@ namespace UnityEditor.VFXEditor.Drawing
         public ScriptableObject GetScriptableObject() { return this; }
         public void OnEnable() {}
 
-        private IGraph m_Graph = new SerializableGraph();
+        private IGraph m_Graph = new VFXGraph();
     }
 
     public class VFXGraphDataSource : SerializedGraphDataSource
@@ -22,7 +22,8 @@ namespace UnityEditor.VFXEditor.Drawing
         protected override void AddTypeMappings()
         {
             AddTypeMapping(typeof(VFXContextNode), typeof(VFXContextDrawData));
-            AddTypeMapping(typeof(EdgeDrawData), typeof(Edge));
+           // AddTypeMapping(typeof(Edge), typeof(EdgeDrawData));
+            AddTypeMapping(typeof(VFXFlowEdge), typeof(VFXFlowEdgeDrawData));
         }
     }
 

@@ -27,7 +27,7 @@ namespace RMGUI.GraphView
             tangents = new Vector3[2];
             points = new Vector3[] { from, to };
 
-            float minTangent = Mathf.Min(Vector3.Distance(from,to) * 0.5f, 100.0f);
+            float minTangent = Mathf.Min(Vector3.Distance(from,to) * 0.25f, 100.0f);
 
             float weight = .5f;
             float weight2 = 1 - weight;
@@ -198,9 +198,6 @@ namespace RMGUI.GraphView
 
 			Vector3[] points, tangents;
 			GetTangents(orientation, from, to, out points, out tangents);
-            /*Handles.DrawLine(points[0], tangents[0]);
-            Handles.DrawLine(tangents[0], tangents[1]);
-            Handles.DrawLine(tangents[1], points[1]);*/
 			Handles.DrawBezier(points[0], points[1], tangents[0], tangents[1], edgeColor, null, 5f);
 
 			// little widget on the middle of the edge

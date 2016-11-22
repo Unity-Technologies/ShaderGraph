@@ -31,5 +31,5 @@ VFXContextDrawer #output {
 }
 
 VFXContextDrawer #connector.anchorHighlight {
-	background-color:#00F;
+	background-color:#FFFFFF;
 }
