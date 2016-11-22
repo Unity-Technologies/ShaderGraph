@@ -8,13 +8,13 @@ namespace UnityEngine.Graphing
     public class SerializableGraph : IGraph, ISerializationCallbackReceiver
     {
         [NonSerialized]
-        private List<IEdge> m_Edges = new List<IEdge>();
+        protected List<IEdge> m_Edges = new List<IEdge>();
 
         [NonSerialized]
-        private List<INode> m_Nodes = new List<INode>();
+        protected List<INode> m_Nodes = new List<INode>();
 
         [NonSerialized]
-        private List<INode> m_VirtualNodes = new List<INode>();
+        protected List<INode> m_VirtualNodes = new List<INode>();
 
         [SerializeField]
         List<SerializationHelper.JSONSerializedElement> m_SerializableNodes = new List<SerializationHelper.JSONSerializedElement>();
@@ -133,7 +133,7 @@ namespace UnityEngine.Graphing
             ValidateGraph();
         }
 
-        private void RemoveEdgeNoValidate(IEdge e)
+        protected void RemoveEdgeNoValidate(IEdge e)
         {
             m_Edges.Remove(e);
         }

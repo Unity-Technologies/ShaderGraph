@@ -1,6 +1,7 @@
 using UnityEditor.Graphing.Drawing;
 using UnityEngine.MaterialGraph;
 using RMGUI.GraphView;
+using Edge = UnityEngine.Graphing.Edge;
 
 namespace UnityEditor.MaterialGraph.Drawing
 {
@@ -19,7 +20,7 @@ namespace UnityEditor.MaterialGraph.Drawing
             AddTypeMapping(typeof(Vector3Node), typeof(Vector3NodeDrawData));
             AddTypeMapping(typeof(Vector4Node), typeof(Vector4NodeDrawData));
             AddTypeMapping(typeof(SubGraphNode), typeof(SubgraphNodeDrawData));
-			AddTypeMapping(typeof(EdgeDrawData), typeof(Edge));
+            AddTypeMapping(typeof(Edge), typeof(EdgeDrawData));
         }
     }
 }

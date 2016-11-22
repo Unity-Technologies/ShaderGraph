@@ -108,7 +108,8 @@ namespace UnityEditor.Graphing.Drawing
                         var targetAnchors = targetNode.elements.OfType<AnchorDrawData>();
                         var targetAnchor = targetAnchors.FirstOrDefault(x => x.slot == toSlot);
 
-                        var edgeData = CreateInstance<EdgeDrawData>();
+                        var type = MapType(edge.GetType());
+                        var edgeData = (EdgeDrawData)CreateInstance(type);
                         edgeData.Initialize(edge);
                         edgeData.output = sourceAnchor;
                         edgeData.output.Connect(edgeData);
@@ -141,7 +142,8 @@ namespace UnityEditor.Graphing.Drawing
 
                     OnNodeChanged(targetNode.node, ModificationScope.Graph);
 
-                    var edgeData = CreateInstance<EdgeDrawData>();
+                    var type = MapType(edge.GetType());
+                    var edgeData = (EdgeDrawData)CreateInstance(type);
                     edgeData.Initialize(edge);
                     edgeData.output = sourceAnchor;
                     edgeData.output.Connect(edgeData);
