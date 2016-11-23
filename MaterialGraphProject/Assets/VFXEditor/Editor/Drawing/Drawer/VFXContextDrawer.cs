@@ -5,13 +5,22 @@ using UnityEngine.RMGUI;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
+    public class VFXFlowAnchor : AbstractNodeAnchor<VFXFlowEdgeDrawData>
+    {
+        public VFXFlowAnchor(AnchorDrawData data)
+            : base(data)
+        {
+
+        }
+    }
+
     public class VFXContextDrawer : AbstractNodeDrawer
     {
         private VisualElement m_Title;
         private VisualElement m_BlockContainer;
 
-        private NodeAnchor m_InputAnchor;
-        private NodeAnchor m_OutputAnchor;
+        private VFXFlowAnchor m_InputAnchor;
+        private VFXFlowAnchor m_OutputAnchor;
 
         public VFXContextDrawer()
         {
@@ -41,13 +50,13 @@ namespace UnityEditor.VFXEditor.Drawing
             if (m_OutputAnchor != null)
                 RemoveChild(m_OutputAnchor);
 
-            m_InputAnchor = new NodeAnchor(data.inputAnchor);
+            m_InputAnchor = new VFXFlowAnchor(data.inputAnchor);
             m_InputAnchor.name = "input";
             AddChild(m_InputAnchor);
 
             if (data.outputAnchor != null)
             {
-                m_OutputAnchor = new NodeAnchor(data.outputAnchor);
+                m_OutputAnchor = new VFXFlowAnchor(data.outputAnchor);
                 m_OutputAnchor.name = "output";
                 AddChild(m_OutputAnchor);
             }
