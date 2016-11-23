@@ -6,24 +6,24 @@ using UnityEngine.RMGUI.StyleSheets;
 
 namespace UnityEditor.Graphing.Drawing
 {
-	internal class NodeAnchor : GraphElement
+	public class AbstractNodeAnchor<TEdgeData> : GraphElement where TEdgeData : EdgeData
 	{
 		public const float k_NodeSize = 15.0f;
 
-		private readonly EdgeConnector<EdgeData> m_RegularConnector = new EdgeConnector<EdgeData>();
-		private readonly EdgeConnector<EdgeData> m_CustomConnector = new EdgeConnector<EdgeData>();
+		private readonly EdgeConnector<TEdgeData> m_HorizontalConnector = new EdgeConnector<TEdgeData>();
+		private readonly EdgeConnector<TEdgeData> m_VerticalConnector = new EdgeConnector<TEdgeData>();
 
 		private IManipulator m_CurrentConnector;
 
 		VisualElement m_ConnectorBox;
 		VisualElement m_ConnectorText;
 
-		public NodeAnchor(NodeAnchorData data)
+		public AbstractNodeAnchor(NodeAnchorData data)
 		{
 			// currently we don't want to be styled as .graphElement since we're contained in a Node
 			classList = ClassList.empty;
 
-			m_CurrentConnector = m_RegularConnector;
+			m_CurrentConnector = m_HorizontalConnector;
 			AddManipulator(m_CurrentConnector);
 
 			m_ConnectorBox = new VisualElement() { name = "connector", width = k_NodeSize, height = k_NodeSize };
@@ -49,11 +49,11 @@ namespace UnityEditor.Graphing.Drawing
 			{
 				if (nodeAnchorData.orientation == Orientation.Horizontal)
 				{
-					m_CurrentConnector = m_RegularConnector;
+					m_CurrentConnector = m_HorizontalConnector;
 				}
 				else
 				{
-					m_CurrentConnector = m_CustomConnector;
+					m_CurrentConnector = m_VerticalConnector;
 				}
 				AddManipulator(m_CurrentConnector);
 			}
@@ -101,4 +101,11 @@ namespace UnityEditor.Graphing.Drawing
 			return m_ConnectorBox.ContainsPoint(m_ConnectorBox.transform.MultiplyPoint3x4(localPoint));
 		}
 	}
+
+    internal class NodeAnchor : AbstractNodeAnchor<EdgeData>
+    {
+        public NodeAnchor(NodeAnchorData data)
+            : base(data)
+        {}
+    }
 }
