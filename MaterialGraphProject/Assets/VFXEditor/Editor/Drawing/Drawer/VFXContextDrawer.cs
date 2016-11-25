@@ -2,6 +2,7 @@ using System;
 using UnityEditor.Graphing.Drawing;
 using UnityEngine;
 using UnityEngine.RMGUI;
+using RMGUI.GraphView;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
@@ -14,7 +15,33 @@ namespace UnityEditor.VFXEditor.Drawing
         }
     }
 
-    public class VFXContextDrawer : AbstractNodeDrawer
+    public class VFXNodeDrawer : AbstractNodeDrawer
+    {
+        public VFXNodeDrawer()
+        {
+        }
+
+        protected virtual void AddChildren()
+        {
+            var view = this.GetFirstAncestorOfType<GraphView>();
+            var data = (VFXNodeDrawData)dataProvider;
+            foreach (var child in data.m_NodeChildren)
+            {
+                var drawer = VFXGraphView.GlobalDataMapper.Create(child);
+                AddChild(drawer);
+            }
+        }
+
+        public override void OnDataChanged()
+        {
+            base.OnDataChanged();
+
+            ClearChildren();
+            AddChildren();
+        }
+    }
+
+    public class VFXContextDrawer : VFXNodeDrawer
     {
         private VisualElement m_Title;
         private VisualElement m_BlockContainer;
@@ -23,25 +50,7 @@ namespace UnityEditor.VFXEditor.Drawing
         private VFXFlowAnchor m_OutputAnchor;
 
         public VFXContextDrawer()
-        {
-            m_Title = new VisualElement()
-            {
-                name = "title",
-                content = new GUIContent(),
-                pickingMode = PickingMode.Ignore
-            };
-            AddChild(m_Title);
-
-            m_BlockContainer = new VisualContainer()
-            {
-                name = "container",
-                pickingMode = PickingMode.Ignore
-            };
-            AddChild(m_BlockContainer);
-
-            m_InputAnchor = null;
-            m_OutputAnchor = null;
-        }
+        {}
 
         private void UpdateSlots(VFXContextDrawData data)
         {
@@ -64,9 +73,38 @@ namespace UnityEditor.VFXEditor.Drawing
                 m_OutputAnchor = null;
         }
 
+        protected override void AddChildren()
+        {
+            base.AddChildren();
+
+            m_Title = new VisualElement()
+            {
+                name = "title",
+                content = new GUIContent(),
+                pickingMode = PickingMode.Ignore
+            };
+            AddChild(m_Title);
+
+            m_BlockContainer = new VisualContainer()
+            {
+                name = "container",
+                pickingMode = PickingMode.Ignore
+            };
+            AddChild(m_BlockContainer);
+
+            m_InputAnchor = null;
+            m_OutputAnchor = null;
+
+            UpdateSlots((VFXContextDrawData)dataProvider);
+        }
+
         public override void OnDataChanged()
         {
             base.OnDataChanged();
+
+            ClearChildren();
+            AddChildren();
+           // Debug.Log("RECREATE CHILDREN!");
 
             var data = dataProvider as VFXContextDrawData;
             if (data == null)
@@ -75,12 +113,12 @@ namespace UnityEditor.VFXEditor.Drawing
                 return;
             }
 
-            m_Title.content.text = data.title;
+            m_Title.content.text = data.title + " " + (m_Counter++).ToString();
             borderColor = !data.selected ? data.color : Color.white;
-
-            UpdateSlots(data);
 
             this.Touch(ChangeType.Repaint);
         }
+
+        private int m_Counter = 0;
     }
 }

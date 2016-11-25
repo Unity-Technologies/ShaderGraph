@@ -8,15 +8,37 @@ using Object = UnityEngine.Object;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
+    // This is a hack to allow data mapper to be accessible outside graph view
+    public class VFXGraphViewDataMapper : GraphViewDataMapper
+    {
+        public VFXGraphViewDataMapper()
+        {
+            this[typeof(EdgeData)] = typeof(Edge);
+            this[typeof(AbstractNodeDrawData)] = typeof(AbstractNodeDrawer);
+
+            // VFX Specific
+            this[typeof(VFXNodeDrawData)] = typeof(VFXNodeDrawer);
+            this[typeof(VFXContextDrawData)] = typeof(VFXContextDrawer);
+            this[typeof(VFXFlowEdgeDrawData)] = typeof(VFXFlowEdgeDrawer);
+        }
+    }
+
     [StyleSheet("Assets/VFXEditor/Editor/Drawing/Styles/VFXGraph.uss")]
     public class VFXGraphView : SerializableGraphView
     {
+       public static VFXGraphViewDataMapper GlobalDataMapper
+       {
+           get { return s_dataMapper; }
+       }
+       private static VFXGraphViewDataMapper s_dataMapper = null;
+
         public VFXGraphView()
         {
             AddManipulator(new ContextualMenu(DoContextMenu));
 
-            dataMapper[typeof(VFXContextDrawData)] = typeof(VFXContextDrawer);
-            dataMapper[typeof(VFXFlowEdgeDrawData)] = typeof(VFXFlowEdgeDrawer);
+            // Hack!
+            var vfxDataMapper = new VFXGraphViewDataMapper();
+            dataMapper = s_dataMapper = vfxDataMapper;
         }
 
         protected EventPropagation DoContextMenu(Event evt, Object customData)
@@ -69,6 +91,10 @@ namespace UnityEditor.VFXEditor.Drawing
                 var drawState = node.drawState;
                 drawState.position = new Rect(creationData.m_Pos.x, creationData.m_Pos.y, 0, 0);
                 node.drawState = drawState;
+
+                // TODO
+                /*VFXSystemNode system = new VFXSystemNode();
+                system.AddChild(node);*/
 
                 var graphDataSource = dataSource as AbstractGraphDataSource;
                 graphDataSource.AddNode(node);

@@ -14,8 +14,5 @@ namespace UnityEngine.VFXEditor
                 // TODO create flow edges
             }
         }
-
-
     }
-
 }

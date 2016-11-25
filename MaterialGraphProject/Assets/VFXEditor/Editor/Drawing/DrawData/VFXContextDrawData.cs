@@ -8,7 +8,7 @@ using UnityEngine.VFXEditor;
 namespace UnityEditor.VFXEditor.Drawing
 {
     [Serializable]
-    public class VFXContextDrawData : AbstractNodeDrawData
+    public class VFXContextDrawData : VFXNodeDrawData
     {
         private AnchorDrawData m_InputAnchor;
         private AnchorDrawData m_OutputAnchor;
@@ -42,9 +42,9 @@ namespace UnityEditor.VFXEditor.Drawing
             }
         }
 
-        public override void Initialize(INode node)
+        public override void Initialize(INode node,AbstractGraphDataSource dataSource)
         {
-            base.Initialize(node);
+            base.Initialize(node,dataSource);
 
             var contextNode = (VFXContextNode)node;
 

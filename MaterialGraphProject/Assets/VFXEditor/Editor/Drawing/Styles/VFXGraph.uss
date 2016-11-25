@@ -1,5 +1,13 @@
+AbstractNodeDrawer {
+	width: 200;
+	height: 200;
+	flex-direction: column;
+	background-color: #FF00FF;
+}
+
 VFXContextDrawer {
 	flex-direction: column;
+	background-color: #FFFF00;
 }
 
 VFXContextDrawer #title {
@@ -10,12 +18,13 @@ VFXContextDrawer #title {
 }
 
 VFXContextDrawer #container {
-	height: 50;
+	height: 100;
 	background-color: #202020;
 }
 
 VFXContextDrawer #input {
-	position-top: -89;
+	position-type: absolute;
+	position-top: -24;
 	height: 24;
 	width: 24;
     position-left: 88;
@@ -23,7 +32,8 @@ VFXContextDrawer #input {
 }
 
 VFXContextDrawer #output {
-	position-top: 26;
+	position-type: absolute;
+	position-bottom: -24;
 	height: 24;
 	width: 24;
     position-left: 88;

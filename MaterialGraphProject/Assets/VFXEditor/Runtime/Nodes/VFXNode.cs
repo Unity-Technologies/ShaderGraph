@@ -12,9 +12,25 @@ namespace UnityEngine.VFXEditor
             return m_Owner;
         }
 
+        public IEnumerable<VFXNode> GetChildren()
+        {
+            return m_Children;
+        }
+
         public VFXNode GetChild(int index)
         {
             return m_Children[index];
+        }
+
+        public void AddChild(VFXNode node)
+        {
+            if (CanAddChild(node,m_Children.Count))
+                m_Children.Add(node);
+        }
+
+        public void RemoveChild(VFXNode node)
+        {
+            m_Children.Remove(node);
         }
 
         public override void OnBeforeSerialize()
@@ -34,7 +50,7 @@ namespace UnityEngine.VFXEditor
         public abstract bool CanAddChild(VFXNode element, int index = -1);
 
         protected VFXNode m_Owner;
-        protected List<VFXNode> m_Children;
+        protected List<VFXNode> m_Children = new List<VFXNode>();
 
         [SerializeField]
         private List<SerializationHelper.JSONSerializedElement> m_SerializableChildren;
