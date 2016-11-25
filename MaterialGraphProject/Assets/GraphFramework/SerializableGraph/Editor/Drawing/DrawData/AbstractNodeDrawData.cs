@@ -35,10 +35,10 @@ namespace UnityEditor.Graphing.Drawing
             node.drawState = drawData;
         }
 
-        public virtual void Initialize(INode inNode)
+        public virtual void Initialize(INode inNode,AbstractGraphDataSource dataSource)
         {
             node = inNode;
-            capabilities |= Capabilities.Movable;
+            //capabilities |= Capabilities.Movable;
 
             if (node == null)
                 return;

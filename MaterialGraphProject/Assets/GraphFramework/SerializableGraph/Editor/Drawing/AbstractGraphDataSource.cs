@@ -85,7 +85,7 @@ namespace UnityEditor.Graphing.Drawing
 
                 node.onModified += OnNodeChanged;
 
-                nodeData.Initialize(node);
+                nodeData.Initialize(node,this);
                 addedNodes.Add(nodeData);
             }
 
@@ -156,7 +156,7 @@ namespace UnityEditor.Graphing.Drawing
             m_Elements.AddRange(drawableEdges.OfType<GraphElementData>());
         }
 
-        private Type MapType(Type type)
+        public Type MapType(Type type)
         {
             Type found = null;
             while (type != null)

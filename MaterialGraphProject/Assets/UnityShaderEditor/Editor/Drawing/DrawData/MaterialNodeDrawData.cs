@@ -26,9 +26,9 @@ namespace UnityEditor.MaterialGraph.Drawing
         protected MaterialNodeDrawData()
         {}
 
-        public override void Initialize(INode inNode)
+        public override void Initialize(INode inNode,AbstractGraphDataSource dataSource)
         {
-            base.Initialize(inNode);
+            base.Initialize(inNode, dataSource);
             AddPreview(inNode);
         }
 

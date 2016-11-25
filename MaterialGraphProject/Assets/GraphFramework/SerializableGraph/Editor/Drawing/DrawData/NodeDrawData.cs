@@ -15,9 +15,9 @@ namespace UnityEditor.Graphing.Drawing
             return new ControlDrawData[0];
         }
 
-        public override void Initialize(INode inNode)
+        public override void Initialize(INode inNode,AbstractGraphDataSource dataSource)
         {
-            base.Initialize(inNode);
+            base.Initialize(inNode, dataSource);
             if (node == null)
                 return;
 
