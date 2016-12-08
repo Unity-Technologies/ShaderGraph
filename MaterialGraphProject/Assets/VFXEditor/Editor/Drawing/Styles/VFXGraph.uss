@@ -5,6 +5,11 @@ AbstractNodeDrawer {
 	background-color: #FF00FF;
 }
 
+VFXBlockDrawer {
+	flex-direction: column;
+	background-color: #FF00FF;
+} 
+
 VFXContextDrawer {
 	flex-direction: column;
 	background-color: #FFFF00;
@@ -20,6 +25,7 @@ VFXContextDrawer #title {
 VFXContextDrawer #container {
 	height: 100;
 	background-color: #202020;
+	flex-direction: column;
 }
 
 VFXContextDrawer #input {

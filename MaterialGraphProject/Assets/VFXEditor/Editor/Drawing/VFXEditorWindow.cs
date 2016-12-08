@@ -22,6 +22,7 @@ namespace UnityEditor.VFXEditor.Drawing
         protected override void AddTypeMappings()
         {
             AddTypeMapping(typeof(VFXContextNode), typeof(VFXContextDrawData));
+            AddTypeMapping(typeof(VFXBlockNode), typeof(VFXBlockDrawData));
             AddTypeMapping(typeof(VFXSystemNode), typeof(VFXNodeDrawData));
            // AddTypeMapping(typeof(Edge), typeof(EdgeDrawData));
             AddTypeMapping(typeof(VFXFlowEdge), typeof(VFXFlowEdgeDrawData));

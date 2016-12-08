@@ -18,7 +18,7 @@ namespace UnityEngine.VFXEditor
     }
 
     [Serializable]
-    public class VFXContextNode : VFXNode<VFXSystemNode, VFXNode>
+    public class VFXContextNode : VFXNode<VFXSystemNode, VFXBlockNode>
     {
         private VFXContextNode()
         {}

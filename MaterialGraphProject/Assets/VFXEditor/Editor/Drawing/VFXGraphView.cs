@@ -19,6 +19,7 @@ namespace UnityEditor.VFXEditor.Drawing
             // VFX Specific
             this[typeof(VFXNodeDrawData)] = typeof(VFXNodeDrawer);
             this[typeof(VFXContextDrawData)] = typeof(VFXContextDrawer);
+            this[typeof(VFXBlockDrawData)] = typeof(VFXBlockDrawer);
             this[typeof(VFXFlowEdgeDrawData)] = typeof(VFXFlowEdgeDrawer);
         }
     }
@@ -57,7 +58,7 @@ namespace UnityEditor.VFXEditor.Drawing
 
             gm.ShowAsContext();
 
-            return EventPropagation.Stop;
+            return EventPropagation.Continue;
         }
 
         private class AddNodeCreationObject

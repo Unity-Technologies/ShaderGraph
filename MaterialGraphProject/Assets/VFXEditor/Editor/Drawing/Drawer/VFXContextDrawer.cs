@@ -2,7 +2,9 @@ using System;
 using UnityEditor.Graphing.Drawing;
 using UnityEngine;
 using UnityEngine.RMGUI;
+using UnityEngine.VFXEditor;
 using RMGUI.GraphView;
+using Object = UnityEngine.Object;
 
 namespace UnityEditor.VFXEditor.Drawing
 {
@@ -21,36 +23,49 @@ namespace UnityEditor.VFXEditor.Drawing
         {
         }
 
-        protected virtual void AddChildren()
+        protected void AddNodeChildren(VisualContainer container)
         {
-            var view = this.GetFirstAncestorOfType<GraphView>();
             var data = (VFXNodeDrawData)dataProvider;
             foreach (var child in data.m_NodeChildren)
             {
                 var drawer = VFXGraphView.GlobalDataMapper.Create(child);
-                AddChild(drawer);
+                container.AddChild(drawer);
             }
         }
 
-        public override void OnDataChanged()
+       /* public override void OnDataChanged()
         {
             base.OnDataChanged();
 
-            ClearChildren();
-            AddChildren();
-        }
+            /ClearChildren();
+            AddNodeChildren(this);
+        }*/
     }
 
     public class VFXContextDrawer : VFXNodeDrawer
     {
         private VisualElement m_Title;
-        private VisualElement m_BlockContainer;
+        private VisualContainer m_BlockContainer;
 
         private VFXFlowAnchor m_InputAnchor;
         private VFXFlowAnchor m_OutputAnchor;
 
+        private Manipulator m_Menu = null;
+
         public VFXContextDrawer()
-        {}
+        {
+            m_Menu = new ContextualMenu(DoContextMenu);
+
+            m_BlockContainer = new VisualContainer()
+            {
+                name = "container",
+                pickingMode = PickingMode.Position
+            };
+
+            m_BlockContainer.AddManipulator(m_Menu);
+
+            //m_BlockContainer.AddManipulator(new ContextualMenu(DoContextMenu));
+        }
 
         private void UpdateSlots(VFXContextDrawData data)
         {
@@ -73,9 +88,9 @@ namespace UnityEditor.VFXEditor.Drawing
                 m_OutputAnchor = null;
         }
 
-        protected override void AddChildren()
+        protected void AddChildren()
         {
-            base.AddChildren();
+           // AddManipulator(m_Menu);
 
             m_Title = new VisualElement()
             {
@@ -85,12 +100,15 @@ namespace UnityEditor.VFXEditor.Drawing
             };
             AddChild(m_Title);
 
-            m_BlockContainer = new VisualContainer()
+           /* m_BlockContainer = new VisualContainer()
             {
                 name = "container",
-                pickingMode = PickingMode.Ignore
-            };
+                pickingMode = PickingMode.Position
+            };*/         
+
             AddChild(m_BlockContainer);
+
+            AddNodeChildren(m_BlockContainer);
 
             m_InputAnchor = null;
             m_OutputAnchor = null;
@@ -98,11 +116,39 @@ namespace UnityEditor.VFXEditor.Drawing
             UpdateSlots((VFXContextDrawData)dataProvider);
         }
 
+        protected EventPropagation DoContextMenu(Event evt, Object customData)
+        {
+            var gm = new GenericMenu();
+            gm.AddItem(new GUIContent("Add Block"), false, AddBlock, null);
+            gm.ShowAsContext();
+
+            return EventPropagation.Stop;
+        }
+
+        private void AddBlock(object obj)
+        {
+            VFXContextDrawData data = (VFXContextDrawData)dataProvider;
+            VFXContextNode node = (VFXContextNode)data.node;
+
+            var view = this.GetFirstAncestorOfType<SerializableGraphView>();
+            if (view != null)
+            {
+                AbstractGraphDataSource dataSource = (AbstractGraphDataSource)view.dataSource;
+                var block = new VFXBlockNode();
+                node.AddChild(block);
+                dataSource.AddNode(block);
+                //data.Initialize(node, dataSource); 
+            }
+
+            //m_BlockContainer.Touch(ChangeType.Repaint);
+        }
+
         public override void OnDataChanged()
         {
             base.OnDataChanged();
 
             ClearChildren();
+           // RemoveManipulator(m_Menu);
             AddChildren();
            // Debug.Log("RECREATE CHILDREN!");
 
