@@ -21,6 +21,7 @@ namespace UnityEditor.MaterialGraph.Drawing
             dataMapper[typeof(MaterialNodeDrawData)] = typeof(MaterialNodeDrawer);
             dataMapper[typeof(AnchorDrawData)] = typeof(NodeAnchor);
             dataMapper[typeof(EdgePresenter)] = typeof(Edge);
+            dataMapper[typeof(GraphNodePresenter)] = typeof(GraphNodeView);
         }
 
         public virtual bool CanAddToNodeMenu(Type type)

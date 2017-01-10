@@ -183,6 +183,10 @@ namespace UnityEditor.Graphing.Drawing
                 return;
 
             UpdateData();
+
+            var graphNodePresenter = CreateInstance<GraphNodePresenter>();
+            graphNodePresenter.Initialize(graphAsset.graph.GetNodes<INode>().FirstOrDefault());
+            m_Elements.Add(graphNodePresenter);
         }
 
         public void AddNode(INode node)
