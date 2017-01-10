@@ -13,8 +13,12 @@ namespace UnityEditor.Graphing.Drawing
 
         public NodeAsideView(AbstractNodeAsidePresenter presenter)
         {
-            m_ChildContainer = new VisualContainer() { name = "container" };
+            m_ChildContainer = new VisualContainer() {name = "container"};
             this.presenter = presenter;
+        }
+
+        public NodeAsideView() : this(null)
+        {
         }
 
         public AbstractNodeAsidePresenter presenter

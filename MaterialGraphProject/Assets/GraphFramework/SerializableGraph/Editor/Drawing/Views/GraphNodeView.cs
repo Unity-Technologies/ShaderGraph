@@ -20,12 +20,12 @@ namespace UnityEditor.Graphing.Drawing
                     {
                         new NodeHeaderView
                         {
-                            {m_NodeTitleView = new NodeTitleView(null)},
-                            {m_NodeCollapseButtonView = new NodeCollapseButtonView(null)}
+                            {m_NodeTitleView = new NodeTitleView()},
+                            {m_NodeCollapseButtonView = new NodeCollapseButtonView()}
                         }
                     },
-                    {m_NodeControlListView = new NodeControlListView(null)},
-                    {m_NodeAsideView = new NodeAsideView(null)}
+                    {m_NodeControlListView = new NodeControlListView()},
+                    {m_NodeAsideView = new NodeAsideView()}
                 }
             });
             classList = ClassList.empty;

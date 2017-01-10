@@ -15,6 +15,10 @@ namespace UnityEditor.Graphing.Drawing
             AddChild(m_Button = new Button(OnClick) {content = new GUIContent("")});
         }
 
+        public NodeCollapseButtonView() : this(null)
+        {
+        }
+
         public AbstractNodeCollapseButtonPresenter presenter
         {
             get { return m_Presenter; }

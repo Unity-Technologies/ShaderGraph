@@ -13,6 +13,10 @@ namespace UnityEditor.Graphing.Drawing
             content = new GUIContent("");
         }
 
+        public NodeTitleView() : this(null)
+        {
+        }
+
         public AbstractNodeTitlePresenter presenter
         {
             get { return m_Presenter; }

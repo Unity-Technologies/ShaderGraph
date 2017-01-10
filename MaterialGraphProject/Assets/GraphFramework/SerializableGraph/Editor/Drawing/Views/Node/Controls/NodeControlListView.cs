@@ -11,6 +11,10 @@ namespace UnityEditor.Graphing.Drawing
         {
         }
 
+        public NodeControlListView() : this(null)
+        {
+        }
+
         protected override NodeControlView Instantiate(AbstractNodeControlPresenter presenter)
         {
             return new NodeControlView(presenter);
