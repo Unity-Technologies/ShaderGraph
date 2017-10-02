@@ -45,6 +45,11 @@ namespace UnityEditor.MaterialGraph.Drawing
         {
             return inMemoryAsset;
         }
+
+        protected override Drawing.UndoAdapter<UnityEngine.MaterialGraph.MaterialGraph> CreateUndoAdapter ()
+        {
+            return CreateInstance<MaterialGraphUndoAdapter>();
+        }
     }
 
     public class SubGraphEditWindow : AbstractMaterialGraphEditWindow<SubGraph>
@@ -52,6 +57,11 @@ namespace UnityEditor.MaterialGraph.Drawing
         public override AbstractMaterialGraph GetMaterialGraph()
         {
             return inMemoryAsset;
+        }
+
+        protected override Drawing.UndoAdapter<SubGraph> CreateUndoAdapter ()
+        {
+            return CreateInstance<SubGraphUndoAdapter>();
         }
     }
 
@@ -81,10 +91,34 @@ namespace UnityEditor.MaterialGraph.Drawing
             }
         }
 
+        protected abstract UndoAdapter<TGraphType> CreateUndoAdapter();
+
+        // data that we want to survive domain reload for Undo
+        UndoAdapterData m_UndoData;
+
+        [System.NonSerialized]
+        UndoAdapter<TGraphType> m_UndoAdapter;
+
+        List<GraphChangeCommand> m_Changes;
+
         protected TGraphType inMemoryAsset
         {
             get { return m_InMemoryAsset; }
-            set { m_InMemoryAsset = value; }
+            set {
+                m_InMemoryAsset = value;
+
+                if (m_UndoAdapter != null)
+                {
+                    Object.DestroyImmediate(m_UndoAdapter);
+                }
+
+                if (m_InMemoryAsset == null)
+                    return;
+
+                m_UndoData = new UndoAdapterData();
+                m_UndoAdapter = CreateUndoAdapter();
+                m_UndoAdapter.Initialize(m_InMemoryAsset, m_UndoData);
+            }
         }
 
         public override Object selected
@@ -111,6 +145,9 @@ namespace UnityEditor.MaterialGraph.Drawing
             graphEditorView.onConvertToSubgraphClick += ToSubGraph;
             graphEditorView.onShowInProjectClick += PingAsset;
             rootVisualContainer.Add(graphEditorView);
+
+            // FIXME just to retrigger initialization logic
+            inMemoryAsset = m_InMemoryAsset;
         }
 
         void OnDisable()
@@ -126,6 +163,10 @@ namespace UnityEditor.MaterialGraph.Drawing
                 UpdateAsset();
             }
             graphEditorView = null;
+            if (m_UndoAdapter != null)
+            {
+                Object.DestroyImmediate(m_UndoAdapter);
+            }
         }
 
         void OnGUI()

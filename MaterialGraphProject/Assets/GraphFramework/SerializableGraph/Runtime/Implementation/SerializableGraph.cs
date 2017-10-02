@@ -46,8 +46,8 @@ namespace UnityEngine.Graphing
                 return;
 
             m_Nodes.Remove(node.guid);
-            NotifyChange(new NodeRemovedGraphChange(node));
             ValidateGraph();
+            NotifyChange(new NodeRemovedGraphChange(node));
         }
 
         void RemoveNodeNoValidate(INode node)
@@ -56,7 +56,7 @@ namespace UnityEngine.Graphing
                 return;
 
             m_Nodes.Remove(node.guid);
-            NotifyChange(new NodeRemovedGraphChange(node));
+            //NotifyChange(new NodeRemovedGraphChange(node));
         }
 
         void AddEdgeToNodeEdges(IEdge edge)
@@ -149,6 +149,9 @@ namespace UnityEngine.Graphing
                 RemoveNodeNoValidate(serializableNode);
 
             ValidateGraph();
+
+            foreach (var serializableNode in nodes.ToArray())
+                NotifyChange(new NodeRemovedGraphChange(serializableNode));
         }
 
         void RemoveEdgeNoValidate(IEdge e)
