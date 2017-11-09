@@ -115,7 +115,7 @@ SubShader
            	Emission = Emission * Emission;
 #endif
 
-			return LightweightFragmentPBR(
+			float4 result = LightweightFragmentPBR(
 				IN.lwCustom,
 				WorldSpacePosition,
 				WorldSpaceNormal,
@@ -132,6 +132,8 @@ SubShader
 				Occlusion,
 				Emission,
 				Alpha);
+			result.a = Alpha;
+			return result;
         }
 	
 		ENDCG

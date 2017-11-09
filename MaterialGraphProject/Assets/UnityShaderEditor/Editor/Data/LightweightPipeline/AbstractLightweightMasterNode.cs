@@ -2,15 +2,27 @@
 using System.IO;
 using System.Linq;
 using UnityEditor.Graphing;
+using UnityEditor.ShaderGraph.Drawing;
+using UnityEngine;
 
 namespace UnityEditor.ShaderGraph
 {
-    public abstract class AbstractLightweightMasterNode : MasterNode
+    public abstract class AbstractLightweightMasterNode : MasterNode, ICustomNodeUI
     {
         private const int kMaxInterpolators = 8;
 
+        [SerializeField]
+        private SurfaceMaterialOptions m_MaterialOptions = new SurfaceMaterialOptions();
+
         protected abstract IEnumerable<int> masterSurfaceInputs { get; }
         protected abstract IEnumerable<int> masterVertexInputs { get; }
+
+        public SurfaceMaterialOptions materialOptions
+        {
+            get { return m_MaterialOptions; }
+            set { m_MaterialOptions = value; }
+        }
+
         protected abstract string GetTemplateName();
 
         protected virtual void GetLightweightDefinesAndRemap(ShaderGenerator defines, ShaderGenerator surfaceOutputRemap, MasterRemapGraph remapper)
@@ -20,9 +32,7 @@ namespace UnityEditor.ShaderGraph
             {
                 foreach (var slot in GetInputSlots<MaterialSlot>())
                 {
-                    surfaceOutputRemap.AddShaderChunk(slot.shaderOutputName
-                                                      + " = surf."
-                                                      + slot.shaderOutputName + ";", true);
+                    surfaceOutputRemap.AddShaderChunk(string.Format("{0} = surf.{0};", slot.shaderOutputName), true);
                 }
             }
             // Step 2: remapper present... complex workflow time
@@ -73,11 +83,11 @@ namespace UnityEditor.ShaderGraph
             var zTestVisitor = new ShaderGenerator();
             var zWriteVisitor = new ShaderGenerator();
 
-            m_MaterialOptions.GetTags(tagsVisitor);
-            m_MaterialOptions.GetBlend(blendingVisitor);
-            m_MaterialOptions.GetCull(cullingVisitor);
-            m_MaterialOptions.GetDepthTest(zTestVisitor);
-            m_MaterialOptions.GetDepthWrite(zWriteVisitor);
+            materialOptions.GetTags(tagsVisitor);
+            materialOptions.GetBlend(blendingVisitor);
+            materialOptions.GetCull(cullingVisitor);
+            materialOptions.GetDepthTest(zTestVisitor);
+            materialOptions.GetDepthWrite(zWriteVisitor);
 
             var interpolators = new ShaderGenerator();
             var vertexShader = new ShaderGenerator();
@@ -86,7 +96,7 @@ namespace UnityEditor.ShaderGraph
 
             ShaderGenerator.GenerateStandardTransforms(
                 GetInterpolatorStartIndex(),
-                10,
+                kMaxInterpolators,
                 interpolators,
                 vertexShader,
                 localPixelShader,
@@ -117,10 +127,14 @@ namespace UnityEditor.ShaderGraph
             resultShader = resultShader.Replace("${Culling}", cullingVisitor.GetShaderString(2));
             resultShader = resultShader.Replace("${ZTest}", zTestVisitor.GetShaderString(2));
             resultShader = resultShader.Replace("${ZWrite}", zWriteVisitor.GetShaderString(2));
-            resultShader = resultShader.Replace("${LOD}", "" + m_MaterialOptions.lod);
+            resultShader = resultShader.Replace("${LOD}", string.Format("{0}", materialOptions.lod));
             return new[] {resultShader};
         }
 
         protected abstract int GetInterpolatorStartIndex();
+        public ModificationScope DrawCustomNodeUI()
+        {
+            return materialOptions.DoGUI();
+        }
     }
 }

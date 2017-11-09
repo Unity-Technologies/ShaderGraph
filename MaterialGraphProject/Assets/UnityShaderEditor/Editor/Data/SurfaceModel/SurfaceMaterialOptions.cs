@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.Graphing;
 using UnityEngine;
 
 namespace UnityEditor.ShaderGraph
@@ -83,37 +84,10 @@ namespace UnityEditor.ShaderGraph
         private RenderType m_RenderType = RenderType.Opaque;
 
         [SerializeField]
-        private bool m_ShadowPass;
-
-        [SerializeField]
-        private bool m_FullForwardShadows;
-
-        [SerializeField]
-        private bool m_NoAmbient;
-
-        [SerializeField]
-        private bool m_NoVertexLights;
-
-        [SerializeField]
-        private bool m_NoLightmaps;
-
-        [SerializeField]
-        private bool m_NoDirLightmap;
-
-        [SerializeField]
-        private bool m_NoForwardAdd;
-
-        [SerializeField]
-        private bool m_ApproxView;
-
-        [SerializeField]
-        private bool m_HalfAsView;
-
-        [SerializeField]
         private int m_LOD = 200;
 
         [SerializeField]
-        private bool m_Expanded;
+        private bool m_Expanded = true;
 
         public void Init()
         {
@@ -124,15 +98,6 @@ namespace UnityEditor.ShaderGraph
             zWrite = ZWrite.On;
             renderQueue = RenderQueue.Geometry;
             renderType = RenderType.Opaque;
-            shadowPass = false;
-            fullForwardShadows = false;
-            noAmbient = false;
-            noVertexLights = false;
-            noLightmaps = false;
-            noDirLightmap = false;
-            noForwardAdd = false;
-            approxView = false;
-            halfAsView = false;
             lod = 200;
         }
 
@@ -166,13 +131,12 @@ namespace UnityEditor.ShaderGraph
         {
             visitor.AddShaderChunk("ZTest " + zTest, false);
         }
-
-        /*private Vector2 m_ScrollPos;
-        public void DoGUI()
+        
+        public ModificationScope DoGUI()
         {
             GUILayout.BeginVertical();
-            m_Expanded = MaterialGraphStyles.Header("Options", m_Expanded);
-
+            
+            EditorGUI.BeginChangeCheck();
             if (m_Expanded)
             {
                 srcBlend = (BlendMode) EditorGUILayout.EnumPopup("Src Blend", srcBlend);
@@ -184,7 +148,9 @@ namespace UnityEditor.ShaderGraph
                 renderType = (RenderType) EditorGUILayout.EnumPopup("Render Type", renderType);
             }
             GUILayout.EndVertical();
-        }*/
+
+            return EditorGUI.EndChangeCheck() ? ModificationScope.Node : ModificationScope.Nothing;
+        }
 
         public BlendMode srcBlend { get { return m_SrcBlend; } set { m_SrcBlend = value; } }
         public BlendMode dstBlend { get { return m_DstBlend; } set { m_DstBlend = value; } }
@@ -193,15 +159,6 @@ namespace UnityEditor.ShaderGraph
         public ZWrite zWrite { get { return m_ZWrite; } set { m_ZWrite = value; } }
         public RenderQueue renderQueue { get { return m_RenderQueue; } set { m_RenderQueue = value; } }
         public RenderType renderType { get { return m_RenderType; } set { m_RenderType = value; } }
-        public bool shadowPass { get { return m_ShadowPass; } set { m_ShadowPass = value; } }
-        public bool fullForwardShadows { get { return m_FullForwardShadows; } set { m_FullForwardShadows = value; } }
-        public bool noAmbient { get { return m_NoAmbient; } set { m_NoAmbient = value; } }
-        public bool noVertexLights { get { return m_NoVertexLights; } set { m_NoVertexLights = value; } }
-        public bool noLightmaps { get { return m_NoLightmaps; } set { m_NoLightmaps = value; } }
-        public bool noDirLightmap { get { return m_NoDirLightmap; } set { m_NoDirLightmap = value; } }
-        public bool noForwardAdd { get { return m_NoForwardAdd; } set { m_NoForwardAdd = value; } }
-        public bool approxView { get { return m_ApproxView; } set { m_ApproxView = value; } }
-        public bool halfAsView { get { return m_HalfAsView; } set { m_HalfAsView = value; } }
         public int lod { get { return m_LOD; } set { m_LOD = value; } }
     }
 }

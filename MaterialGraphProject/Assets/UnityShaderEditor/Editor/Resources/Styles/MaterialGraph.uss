@@ -313,6 +313,11 @@ NodeEditorHeaderView > #title {
     padding-right: 15;
 }
 
+.nodeEditor > .section > .row {
+	flex-direction: row;
+	justify-content: space-between;
+}
+
 IMGUISlotEditorView {
     flex-direction: column;
     padding-bottom: 2;

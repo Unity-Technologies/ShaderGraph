@@ -14,10 +14,6 @@ namespace UnityEditor.ShaderGraph
         [SerializeField]
         protected SurfaceMaterialOptions m_MaterialOptions = new SurfaceMaterialOptions();
 
-        public SurfaceMaterialOptions options
-        {
-            get { return m_MaterialOptions; }
-        }
 
         public override PreviewMode previewMode
         {
