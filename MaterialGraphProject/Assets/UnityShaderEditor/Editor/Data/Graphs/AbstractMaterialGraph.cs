@@ -308,6 +308,80 @@ namespace UnityEditor.ShaderGraph
             surfaceDescriptionStruct.AddShaderChunk("};", false);
         }
 
+        internal static void GenerateVertexShader(
+            List<INode> activeNodeList,
+            AbstractMaterialNode masterNode, 
+            AbstractMaterialGraph graph,
+            ShaderGenerator shaderFunctionVisitor, 
+            ShaderGenerator vertexShader,
+            PropertyCollector shaderProperties,
+            GenerationMode mode, 
+            IEnumerable<MaterialSlot> slots = null)
+        {
+            vertexShader.AddShaderChunk("GraphVertexInput PopulateVertexData(GraphVertexInput v){", false);
+            vertexShader.Indent();
+
+            graph.CollectShaderProperties(shaderProperties, mode);
+
+            var currentId = -1;
+            foreach (var activeNode in activeNodeList.OfType<AbstractMaterialNode>())
+            {
+                if (activeNode is IGeneratesFunction)
+                    (activeNode as IGeneratesFunction).GenerateNodeFunction(shaderFunctionVisitor, mode);
+                if (activeNode is IGeneratesBodyCode)
+                    (activeNode as IGeneratesBodyCode).GenerateNodeCode(vertexShader, mode);
+                if (masterNode == null && activeNode.hasPreview)
+                {
+                    var outputSlot = activeNode.GetOutputSlots<MaterialSlot>().FirstOrDefault();
+                    if (outputSlot != null)
+                    {
+                        currentId++;
+                        //ids[activeNode.guid] = currentId;
+                        //surfaceDescriptionFunction.AddShaderChunk(string.Format("if ({0} == {1}) {{ surface.PreviewOutput = {2}; return surface; }}", outputIdProperty.referenceName, currentId, ShaderGenerator.AdaptNodeOutputForPreview(activeNode, outputSlot.id, activeNode.GetVariableNameForSlot(outputSlot.id))), false);
+                    }
+                }
+
+                activeNode.CollectShaderProperties(shaderProperties, mode);
+            }
+
+            if (masterNode != null)
+            {
+                if (masterNode is IMasterNode)
+                {
+                    var usedSlots = slots ?? masterNode.GetInputSlots<MaterialSlot>();
+                    foreach (var input in usedSlots)
+                    {
+                        if (input.shaderStage == ShaderStage.Vertex)
+                        {
+                            var foundEdges = graph.GetEdges(input.slotReference).ToArray();
+                            if (foundEdges.Any())
+                            {
+                                var outputRef = foundEdges[0].outputSlot;
+                                var fromNode = graph.GetNodeFromGuid<AbstractMaterialNode>(outputRef.nodeGuid);
+                                vertexShader.AddShaderChunk(string.Format("v.vertex += {0};", fromNode.GetVariableNameForSlot(outputRef.slotId)), true);
+                            }
+                            else
+                            {
+                                vertexShader.AddShaderChunk(string.Format("v.vertex += {0};", input.GetDefaultValue(mode)), true);
+                            }
+                        }
+                    }
+                }
+                else if (masterNode.hasPreview)
+                {
+                    foreach (var slot in masterNode.GetOutputSlots<MaterialSlot>())
+                    {
+                        if (slot.shaderStage == ShaderStage.Vertex)
+                            vertexShader.AddShaderChunk(string.Format("v.vertex += {0};", masterNode.GetVariableNameForSlot(slot.id)), true);
+                    }
+                }
+            }
+
+            vertexShader.AddShaderChunk("return v;", false);
+            vertexShader.Deindent();
+            vertexShader.AddShaderChunk("}", false);
+        }
+
         internal static void GenerateSurfaceDescription(
             List<INode> activeNodeList,
             AbstractMaterialNode masterNode,
@@ -383,23 +457,29 @@ namespace UnityEditor.ShaderGraph
                     var usedSlots = slots ?? masterNode.GetInputSlots<MaterialSlot>();
                     foreach (var input in usedSlots)
                     {
-                        var foundEdges = graph.GetEdges(input.slotReference).ToArray();
-                        if (foundEdges.Any())
+                        if (input.shaderStage != ShaderStage.Vertex)
                         {
-                            var outputRef = foundEdges[0].outputSlot;
-                            var fromNode = graph.GetNodeFromGuid<AbstractMaterialNode>(outputRef.nodeGuid);
-                            surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(input.shaderOutputName), fromNode.GetVariableNameForSlot(outputRef.slotId)), true);
-                        }
-                        else
-                        {
-                            surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(input.shaderOutputName), input.GetDefaultValue(mode)), true);
+                            var foundEdges = graph.GetEdges(input.slotReference).ToArray();
+                            if (foundEdges.Any())
+                            {
+                                var outputRef = foundEdges[0].outputSlot;
+                                var fromNode = graph.GetNodeFromGuid<AbstractMaterialNode>(outputRef.nodeGuid);
+                                surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(input.shaderOutputName), fromNode.GetVariableNameForSlot(outputRef.slotId)), true);
+                            }
+                            else
+                            {
+                                surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(input.shaderOutputName), input.GetDefaultValue(mode)), true);
+                            }
                         }
                     }
                 }
                 else if (masterNode.hasPreview)
                 {
                     foreach (var slot in masterNode.GetOutputSlots<MaterialSlot>())
-                        surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(slot.shaderOutputName), masterNode.GetVariableNameForSlot(slot.id)), true);
+                    {
+                        if(slot.shaderStage != ShaderStage.Vertex)
+                            surfaceDescriptionFunction.AddShaderChunk(string.Format("surface.{0} = {1};", AbstractMaterialNode.GetHLSLSafeName(slot.shaderOutputName), masterNode.GetVariableNameForSlot(slot.id)), true);
+                    }   
                 }
             }
 
@@ -496,12 +576,6 @@ struct GraphVertexInput
             surfaceInputs.Deindent();
             surfaceInputs.AddShaderChunk("};", false);
 
-            vertexShader.AddShaderChunk("GraphVertexInput PopulateVertexData(GraphVertexInput v){", false);
-            vertexShader.Indent();
-            vertexShader.AddShaderChunk("return v;", false);
-            vertexShader.Deindent();
-            vertexShader.AddShaderChunk("}", false);
-
             var slots = new List<MaterialSlot>();
             foreach (var activeNode in isUber ? activeNodeList.Where(n => ((AbstractMaterialNode)n).hasPreview) : ((INode)node).ToEnumerable())
             {
@@ -513,6 +587,9 @@ struct GraphVertexInput
             GenerateSurfaceDescriptionStruct(surfaceDescriptionStruct, slots, !isUber);
 
             var shaderProperties = new PropertyCollector();
+
+            GenerateVertexShader(activeNodeList, node, this, shaderFunctionVisitor, vertexShader, shaderProperties, mode);
+
             outputIdProperty = new FloatShaderProperty
             {
                 displayName = "OutputId",

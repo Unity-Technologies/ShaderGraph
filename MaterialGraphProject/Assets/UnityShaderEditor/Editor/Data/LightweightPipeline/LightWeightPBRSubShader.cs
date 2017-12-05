@@ -11,6 +11,10 @@ namespace UnityEditor.ShaderGraph
         Pass m_ForwardPassMetallic = new Pass()
         {
             Name = "LightweightForward",
+            VertexShaderSlots = new List<int>()
+            {
+                PBRMasterNode.VertexOffsetId
+            },
             PixelShaderSlots = new List<int>()
             {
                 PBRMasterNode.AlbedoSlotId,
@@ -33,6 +37,10 @@ namespace UnityEditor.ShaderGraph
         Pass m_ForwardPassSpecular = new Pass()
         {
             Name = "LightweightForward",
+            VertexShaderSlots = new List<int>()
+            {
+                PBRMasterNode.VertexOffsetId
+            },
             PixelShaderSlots = new List<int>()
             {
                 PBRMasterNode.AlbedoSlotId,
@@ -92,11 +100,22 @@ struct GraphVertexInput
             surfaceInputs.Deindent();
             surfaceInputs.AddShaderChunk("};", false);
 
-            surfaceVertexShader.AddShaderChunk("GraphVertexInput PopulateVertexData(GraphVertexInput v){", false);
+            var vertexSlots = new List<MaterialSlot>();
+            foreach (var id in pass.VertexShaderSlots)
+                vertexSlots.Add(masterNode.FindSlot<MaterialSlot>(id));
+            AbstractMaterialGraph.GenerateVertexShader(activeNodeList, masterNode, masterNode.owner as AbstractMaterialGraph, shaderFunctionVisitor, surfaceVertexShader, shaderProperties, mode, vertexSlots);
+            /*AbstractMaterialGraph.GenerateVertexShader(
+                masterNode, 
+                masterNode.owner as AbstractMaterialGraph, 
+                surfaceVertexShader, 
+                mode,
+                vertexSlots);*/
+
+            /*surfaceVertexShader.AddShaderChunk("GraphVertexInput PopulateVertexData(GraphVertexInput v){", false);
             surfaceVertexShader.Indent();
             surfaceVertexShader.AddShaderChunk("return v;", false);
             surfaceVertexShader.Deindent();
-            surfaceVertexShader.AddShaderChunk("}", false);
+            surfaceVertexShader.AddShaderChunk("}", false);*/
 
             var slots = new List<MaterialSlot>();
             foreach (var id in pass.PixelShaderSlots)
