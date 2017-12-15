@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.ShaderGraph;
 
 namespace UnityEditor.Graphing
 {
@@ -16,6 +17,7 @@ namespace UnityEditor.Graphing
     public interface INode
     {
         OnNodeModified onModified { get; set; }
+        void Dirty(ModificationScope scope);
         IGraph owner { get; set; }
         Guid guid { get; }
         Guid RewriteGuid();
@@ -35,6 +37,10 @@ namespace UnityEditor.Graphing
         bool hasError { get; }
         void ValidateNode();
         void UpdateNodeAfterDeserialization();
+        object data { get; set; }
+        void RemoveSlotsNameNotMatching(IEnumerable<int> slotIds, bool supressWarnings = false);
+        AbstractMaterialNode.OutputPrecision precision { get; set; }
+        string GetVariableNameForNode();
     }
 
     public static class NodeExtensions
