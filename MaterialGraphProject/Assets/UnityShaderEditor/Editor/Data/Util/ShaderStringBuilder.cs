@@ -111,5 +111,15 @@ namespace UnityEditor.ShaderGraph
         {
             return m_StringBuilder.ToString();
         }
+
+        internal void Clear()
+        {
+            m_StringBuilder.Length = 0;
+        }
+
+        internal int length
+        {
+            get { return m_StringBuilder.Length; }
+        }
     }
 }
