@@ -25,7 +25,6 @@ namespace UnityEditor.ShaderGraph.Drawing
         PreviewSceneResources m_SceneResources;
         Texture2D m_ErrorTexture;
         Shader m_UberShader;
-        string m_UberShaderString;
         Dictionary<Guid, int> m_UberShaderIds;
         FloatShaderProperty m_OutputIdProperty;
 
@@ -201,17 +200,20 @@ namespace UnityEditor.ShaderGraph.Drawing
                         m_NodesWith3DPreview.Add(node.guid);
                 }
                 PropagateNodeSet(m_NodesWith3DPreview);
+                foreach (var pair in m_RenderDatas)
+                    pair.Value.previewMode = m_NodesWith3DPreview.Contains(pair.Key) ? PreviewMode.Preview3D : PreviewMode.Preview2D;
                 PropagateNodeSet(m_DirtyShaders);
 
-                var masterNodes = new List<INode>();
+                var masterNodes = new List<MasterNode>();
                 var uberNodes = new List<INode>();
                 foreach (var guid in m_DirtyShaders)
                 {
                     var node = m_Graph.GetNodeFromGuid(guid);
                     if (node == null)
                         continue;
-                    if (node is IMasterNode)
-                        masterNodes.Add(node);
+                    var masterNode = node as MasterNode;
+                    if (masterNode != null)
+                        masterNodes.Add(masterNode);
                     else
                         uberNodes.Add(node);
                 }
@@ -233,11 +235,10 @@ namespace UnityEditor.ShaderGraph.Drawing
                     {
                         m_UberShaderIds.Clear();
                         var results = m_Graph.GetUberPreviewShader();
-                        m_UberShaderString = results.shader;
                         m_OutputIdProperty = results.outputIdProperty;
                         m_UberShaderIds = results.ids;
-                        ShaderUtil.UpdateShaderAsset(m_UberShader, m_UberShaderString);
-                        File.WriteAllText(Application.dataPath + "/../UberShader.shader", (m_UberShaderString ?? "null").Replace("UnityEngine.MaterialGraph", "Generated"));
+                        ShaderUtil.UpdateShaderAsset(m_UberShader, results.shader);
+                        File.WriteAllText(Application.dataPath + "/../UberShader.shader", (results.shader ?? "null").Replace("UnityEngine.MaterialGraph", "Generated"));
                         bool uberShaderHasError = false;
                         if (MaterialGraphAsset.ShaderHasError(m_UberShader))
                         {
@@ -271,7 +272,6 @@ namespace UnityEditor.ShaderGraph.Drawing
                             PreviewShaderData shaderData;
                             if (!m_ShaderDatas.TryGetValue(node.guid, out shaderData))
                                 continue;
-                            shaderData.previewMode = m_NodesWith3DPreview.Contains(node.guid) ? PreviewMode.Preview3D : PreviewMode.Preview2D;
                             shaderData.shader = m_UberShader;
                             shaderData.hasError = uberShaderHasError;
                         }
@@ -348,7 +348,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                     continue;
                 }
 
-                if (renderData.shaderData.previewMode == PreviewMode.Preview2D)
+                if (renderData.previewMode == PreviewMode.Preview2D)
                     m_RenderList2D.Add(renderData);
                 else
                     m_RenderList3D.Add(renderData);
@@ -456,8 +456,6 @@ namespace UnityEditor.ShaderGraph.Drawing
             PreviewShaderData shaderData;
             if (!m_ShaderDatas.TryGetValue(nodeGuid, out shaderData))
                 return;
-
-            shaderData.previewMode = m_NodesWith3DPreview.Contains(nodeGuid) ? PreviewMode.Preview3D : PreviewMode.Preview2D;
 
             if (!(node is IMasterNode) && (!node.hasPreview || NodeUtils.FindEffectiveShaderStage(node, true) == ShaderStage.Vertex))
             {
@@ -610,7 +608,6 @@ Shader ""hidden/preview""
         public INode node { get; set; }
         public Shader shader { get; set; }
         public string shaderString { get; set; }
-        public PreviewMode previewMode { get; set; }
         public bool hasError { get; set; }
     }
 
@@ -619,6 +616,7 @@ Shader ""hidden/preview""
         public PreviewShaderData shaderData { get; set; }
         public RenderTexture renderTexture { get; set; }
         public Texture texture { get; set; }
+        public PreviewMode previewMode { get; set; }
         public OnPreviewChanged onPreviewChanged;
 
         public void NotifyPreviewChanged()
