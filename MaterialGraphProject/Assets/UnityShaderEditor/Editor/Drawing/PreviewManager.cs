@@ -243,7 +243,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                         {
                             var errors = MaterialGraphAsset.GetShaderErrors(m_UberShader);
                             var message = new ShaderStringBuilder();
-                            message.AppendLine("Preview shader has {0} error{1}:", errors.Length, errors.Length != 1 ? "s" : "");
+                            message.AppendLine(@"Preview shader for graph has {0} error{1}:", errors.Length, errors.Length != 1 ? "s" : "");
                             foreach (var error in errors)
                             {
                                 INode node = null;
