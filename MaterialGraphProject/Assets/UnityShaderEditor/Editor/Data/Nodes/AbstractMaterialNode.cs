@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEditor.Graphing;
 
@@ -49,6 +48,8 @@ namespace UnityEditor.ShaderGraph
 
         [NonSerialized]
         private bool m_HasError;
+
+        public Identifier tempId { get; set; }
 
         public IGraph owner { get; set; }
 
