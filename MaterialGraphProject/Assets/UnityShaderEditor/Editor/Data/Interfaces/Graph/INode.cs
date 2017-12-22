@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.ShaderGraph;
 
 namespace UnityEditor.Graphing
 {
@@ -18,6 +19,7 @@ namespace UnityEditor.Graphing
         OnNodeModified onModified { get; set; }
         IGraph owner { get; set; }
         Guid guid { get; }
+        Identifier tempId { get; set; }
         Guid RewriteGuid();
         string name { get; set; }
         bool canDeleteNode { get; }
