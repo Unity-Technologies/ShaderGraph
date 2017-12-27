@@ -2,23 +2,24 @@
 {
     public struct Identifier
     {
-        int m_Version;
+        uint m_Version;
         int m_Index;
-        bool m_Valid;
 
-        public Identifier(int index)
+        public Identifier(int index, uint version = 1)
         {
-            m_Version = 0;
+            m_Version = version;
             m_Index = index;
-            m_Valid = true;
         }
 
         public void IncrementVersion()
         {
-            m_Version++;
+            if (m_Version == uint.MaxValue)
+                m_Version = 1;
+            else
+                m_Version++;
         }
 
-        public int version
+        public uint version
         {
             get { return m_Version; }
         }
@@ -30,7 +31,7 @@
 
         public bool valid
         {
-            get { return m_Valid; }
+            get { return m_Version != 0; }
         }
     }
 }

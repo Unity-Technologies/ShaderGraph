@@ -297,6 +297,8 @@ namespace UnityEditor.ShaderGraph
         public INode GetNodeFromTempId(Identifier tempId)
         {
             var node = m_Nodes[tempId.index];
+            if (node == null)
+                throw new Exception("Index does not contain a node.");
             if (node.tempId.version != tempId.version)
                 throw new Exception("Trying to retrieve a node that was removed from the graph.");
             return node;
