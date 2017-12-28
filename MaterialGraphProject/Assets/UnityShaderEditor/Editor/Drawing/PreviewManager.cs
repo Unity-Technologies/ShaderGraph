@@ -495,14 +495,22 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         void ReleaseUnmanagedResources()
         {
+            if (m_ErrorTexture != null)
+            {
+                Object.DestroyImmediate(m_ErrorTexture);
+                m_ErrorTexture = null;
+            }
             if (m_PreviewMaterial != null)
+            {
                 Object.DestroyImmediate(m_PreviewMaterial, true);
-            m_PreviewMaterial = null;
+                m_PreviewMaterial = null;
+            }
             if (m_SceneResources != null)
+            {
                 m_SceneResources.Dispose();
-            m_SceneResources = null;
-            var previews = m_RenderDatas.ToList();
-            foreach (var renderData in previews)
+                m_SceneResources = null;
+            }
+            foreach (var renderData in m_RenderDatas.ToList())
                 DestroyPreview(renderData.shaderData.node.tempId);
         }
 
