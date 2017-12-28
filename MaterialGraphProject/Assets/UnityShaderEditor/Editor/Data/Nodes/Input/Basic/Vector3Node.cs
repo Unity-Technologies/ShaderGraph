@@ -70,19 +70,16 @@ namespace UnityEditor.ShaderGraph
 
         public override void CollectPreviewMaterialProperties(List<PreviewProperty> properties)
         {
-            properties.Add(new PreviewProperty()
+            properties.Add(new PreviewProperty(PropertyType.Vector3)
             {
                 name = GetVariableNameForNode(),
-                propType = PropertyType.Vector3,
                 vector4Value = m_Value
             });
         }
 
         public IShaderProperty AsShaderProperty()
         {
-            var prop = new Vector3ShaderProperty();
-            prop.value = value;
-            return prop;
+            return new Vector3ShaderProperty { value = value };
         }
 
         public int outputSlotId { get { return OutputSlotId; } }

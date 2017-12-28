@@ -106,19 +106,16 @@ namespace UnityEditor.ShaderGraph
 
         public override void CollectPreviewMaterialProperties(List<PreviewProperty> properties)
         {
-            properties.Add(new PreviewProperty()
+            properties.Add(new PreviewProperty(PropertyType.Float)
             {
                 name = GetVariableNameForNode(),
-                propType = PropertyType.Float,
                 floatValue = m_Value
             });
         }
 
         public IShaderProperty AsShaderProperty()
         {
-            var prop = new FloatShaderProperty();
-            prop.value = value;
-            return prop;
+            return new FloatShaderProperty { value = value };
         }
 
         public int outputSlotId { get { return OutputSlotId; } }

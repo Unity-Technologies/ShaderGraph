@@ -169,10 +169,9 @@ namespace UnityEditor.ShaderGraph
             base.CollectPreviewMaterialProperties(properties);
             // Encode swizzle values into an integer
             var value = ((int)redChannel) | ((int)greenChannel << 2) | ((int)blueChannel << 4) | ((int)alphaChannel << 6);
-            properties.Add(new PreviewProperty
+            properties.Add(new PreviewProperty(PropertyType.Float)
             {
                 name = GetVariableNameForNode(),
-                propType = PropertyType.Float,
                 floatValue = value
             });
         }
