@@ -36,10 +36,7 @@ namespace UnityEditor.ShaderGraph
                     return;
 
                 m_Color = value;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 

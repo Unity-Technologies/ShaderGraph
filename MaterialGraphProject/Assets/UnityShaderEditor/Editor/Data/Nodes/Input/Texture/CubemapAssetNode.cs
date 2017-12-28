@@ -36,10 +36,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_Cubemap.cubemap == value)
                     return;
                 m_Cubemap.cubemap = value;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 

@@ -64,8 +64,7 @@ namespace UnityEditor.ShaderGraph
                 if ((value.outRed == m_ChannelMixer.outRed) && (value.outGreen == m_ChannelMixer.outGreen) && (value.outBlue == m_ChannelMixer.outBlue))
                     return;
                 m_ChannelMixer = value;
-                if (onModified != null)
-                    onModified(this, ModificationScope.Node);
+                Dirty(ModificationScope.Node);
             }
         }
 

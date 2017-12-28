@@ -17,6 +17,7 @@ namespace UnityEditor.Graphing
     public interface INode
     {
         OnNodeModified onModified { get; set; }
+        void Dirty(ModificationScope scope);
         IGraph owner { get; set; }
         Guid guid { get; }
         Identifier tempId { get; set; }

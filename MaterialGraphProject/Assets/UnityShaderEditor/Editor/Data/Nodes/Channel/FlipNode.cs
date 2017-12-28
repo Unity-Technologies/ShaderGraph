@@ -51,10 +51,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_RedChannel == value.isOn)
                     return;
                 m_RedChannel = value.isOn;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 
@@ -70,10 +67,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_GreenChannel == value.isOn)
                     return;
                 m_GreenChannel = value.isOn;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 
@@ -89,10 +83,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_BlueChannel == value.isOn)
                     return;
                 m_BlueChannel = value.isOn;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 
@@ -107,10 +98,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_AlphaChannel == value.isOn)
                     return;
                 m_AlphaChannel = value.isOn;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 

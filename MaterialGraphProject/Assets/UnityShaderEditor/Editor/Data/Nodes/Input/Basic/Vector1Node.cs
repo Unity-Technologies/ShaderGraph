@@ -43,8 +43,7 @@ namespace UnityEditor.ShaderGraph
 
                 m_Value = value;
 
-                if (onModified != null)
-                    onModified(this, ModificationScope.Node);
+                Dirty(ModificationScope.Node);
             }
         }
 
@@ -58,8 +57,7 @@ namespace UnityEditor.ShaderGraph
 
                  m_floatType = value;
 
-                 if (onModified != null)
-                     onModified(this, ModificationScope.Node);
+                 Dirty(ModificationScope.Node);
              }
          }*/
 
@@ -73,8 +71,7 @@ namespace UnityEditor.ShaderGraph
 
                   m_rangeValues = value;
 
-                  if (onModified != null)
-                      onModified(this, ModificationScope.Node);
+                  Dirty(ModificationScope.Node);
               }
           }
   */

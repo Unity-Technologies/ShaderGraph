@@ -36,10 +36,7 @@ namespace UnityEditor.ShaderGraph
                 if (m_Texture.texture == value)
                     return;
                 m_Texture.texture = value;
-                if (onModified != null)
-                {
-                    onModified(this, ModificationScope.Node);
-                }
+                Dirty(ModificationScope.Node);
             }
         }
 
