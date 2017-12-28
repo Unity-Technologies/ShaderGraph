@@ -58,7 +58,7 @@ namespace UnityEditor.ShaderGraph
 
         public IEnumerable<T> GetNodes<T>() where T : INode
         {
-            return m_Nodes.OfType<T>();
+            return m_Nodes.Where(x => x != null).OfType<T>();
         }
 
         [SerializeField]
@@ -504,7 +504,7 @@ namespace UnityEditor.ShaderGraph
             using (var removedNodesPooledObject = ListPool<Guid>.GetDisposable())
             {
                 var removedNodeGuids = removedNodesPooledObject.value;
-                removedNodeGuids.AddRange(m_Nodes.Select(n => n.guid));
+                removedNodeGuids.AddRange(m_Nodes.Where(n => n != null).Select(n => n.guid));
                 foreach (var nodeGuid in removedNodeGuids)
                     RemoveNodeNoValidate(m_NodeDictionary[nodeGuid]);
             }
@@ -522,7 +522,7 @@ namespace UnityEditor.ShaderGraph
 
         public void OnBeforeSerialize()
         {
-            m_SerializableNodes = SerializationHelper.Serialize(m_Nodes.OfType<INode>());
+            m_SerializableNodes = SerializationHelper.Serialize(GetNodes<INode>());
             m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
             m_SerializedProperties = SerializationHelper.Serialize<IShaderProperty>(m_Properties);
         }
