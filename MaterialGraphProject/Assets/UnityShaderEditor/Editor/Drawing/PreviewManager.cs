@@ -59,6 +59,8 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         public PreviewRenderData GetPreview(AbstractMaterialNode node)
         {
+            if (node.tempId.version != m_Versions[node.tempId.index])
+                throw new Exception("Trying to get preview for node that doesn't exist in preview manager");
             return m_RenderDatas[node.tempId.index];
         }
 
