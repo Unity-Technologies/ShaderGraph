@@ -317,7 +317,12 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         public void CopyTo(int[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            var i = 0;
+            foreach (var index in this)
+            {
+                array[arrayIndex + i] = index;
+                i++;
+            }
         }
 
         public bool Remove(int index)

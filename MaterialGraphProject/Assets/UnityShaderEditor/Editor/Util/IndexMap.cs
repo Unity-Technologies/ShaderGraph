@@ -51,7 +51,12 @@ namespace UnityShaderEditor.Editor.Util
 
         public void CopyTo(KeyValuePair<int, T>[] array, int arrayIndex)
         {
-            throw new System.NotImplementedException();
+            var i = 0;
+            foreach (var pair in this)
+            {
+                array[arrayIndex + i] = pair;
+                i++;
+            }
         }
 
         public bool Remove(KeyValuePair<int, T> item)
@@ -200,7 +205,12 @@ namespace UnityShaderEditor.Editor.Util
 
             public void CopyTo(T[] array, int arrayIndex)
             {
-                throw new NotImplementedException();
+                var i = 0;
+                foreach (var value in this)
+                {
+                    array[arrayIndex + i] = value;
+                    i++;
+                }
             }
 
             public bool Remove(T item)
