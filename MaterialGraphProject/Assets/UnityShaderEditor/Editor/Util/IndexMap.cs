@@ -7,8 +7,8 @@ namespace UnityShaderEditor.Editor.Util
 {
     public class IndexMap<T> : IDictionary<int, T>
     {
-        IndexSet m_Keys;
-        List<T> m_Values;
+        IndexSet m_Keys = new IndexSet();
+        List<T> m_Values = new List<T>();
 
         public IEnumerator<KeyValuePair<int, T>> GetEnumerator()
         {
@@ -90,6 +90,11 @@ namespace UnityShaderEditor.Editor.Util
             return false;
         }
 
+        public T GetValueOrDefault(int key)
+        {
+            return m_Keys.Contains(key) ? m_Values[key] : default(T);
+        }
+
         public T this[int key]
         {
             get
@@ -102,6 +107,7 @@ namespace UnityShaderEditor.Editor.Util
             {
                 for (var i = m_Values.Count; i <= key; i++)
                     m_Values.Add(default(T));
+                m_Keys.Add(key);
                 m_Values[key] = value;
             }
         }
