@@ -22,7 +22,6 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
         VisualElement m_PropertyItems;
         VisualElement m_LayerItems;
         ObjectField m_PreviewMeshPicker;
-        AbstractNodeEditorView m_EditorView;
 
         PreviewTextureView m_PreviewTextureView;
 
