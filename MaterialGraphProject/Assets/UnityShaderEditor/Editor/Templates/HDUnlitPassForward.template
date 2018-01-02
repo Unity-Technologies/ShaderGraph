@@ -17,24 +17,20 @@ Pass
 
     #pragma vertex Vert
     #pragma fragment Frag
-    #pragma glsl
-    #pragma debug
 
     #define UNITY_MATERIAL_UNLIT // Need to be define before including Material.hlsl
 
     #include "CoreRP/ShaderLibrary/common.hlsl"
-
-    // NOCHECKIN: we have to replace this with some non-hardcoded path to the HDRP global stuff
-    #include "../HDRenderPipeline/HDRP/ShaderVariables.hlsl"
-    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/FragInputs.hlsl"
-    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/ShaderPass.cs.hlsl"
+    #include "HDRP/ShaderVariables.hlsl"
+    #include "HDRP/ShaderPass/FragInputs.hlsl"
+    #include "HDRP/ShaderPass/ShaderPass.cs.hlsl"
 
     ${Defines}
     
-    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/Material/Material.hlsl"
+    #include "HDRP/Material/Material.hlsl"
 
     // This include will define the various Attributes/Varyings structure
-    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/VaryingMesh.hlsl"
+    #include "HDRP/ShaderPass/VaryingMesh.hlsl"
 
     ${Graph}
 
@@ -71,8 +67,7 @@ Pass
         builtinData.depthOffset = 0.0;
     }
 
-    // NOCHECKIN this path needs to not be hard-coded...  :(
-    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/${ShaderPassInclude}"
+    #include "HDRP/ShaderPass/${ShaderPassInclude}"
 
     ENDHLSL
 }

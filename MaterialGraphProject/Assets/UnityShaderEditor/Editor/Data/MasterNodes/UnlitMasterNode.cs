@@ -64,14 +64,11 @@ namespace UnityEditor.ShaderGraph
             finalShader.Deindent();
             finalShader.AddShaderChunk("}", false);
 
-            // NOCHECKIN -- lightweight needs to adopt new common.hlsl -- incompatible with property declarations
-//            var lwSub = new LightWeightUnlitSubShader();
-//            foreach (var subshader in lwSub.GetSubshader(this, mode))
-//                finalShader.AddShaderChunk(subshader, true);
+            var lwSub = new LightWeightUnlitSubShader();
+            finalShader.AddShaderChunk(lwSub.GetSubshader(this, mode), true);
 
             var hdSub = new HDUnlitSubShader();
-            foreach (var subshader in hdSub.GetSubshader(this, mode))
-                finalShader.AddShaderChunk(subshader, true);
+            finalShader.AddShaderChunk(hdSub.GetSubshader(this, mode), true);
 
             finalShader.Deindent();
             finalShader.AddShaderChunk("}", false);
