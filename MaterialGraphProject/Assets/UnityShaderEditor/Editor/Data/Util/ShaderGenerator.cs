@@ -126,6 +126,28 @@ namespace UnityEditor.ShaderGraph
             if (File.Exists(result2))
                 return result2;
 
+            // todo: fix this up... quick hack for working in a sub-asset install
+            var path3 = new List<string>
+            {
+                Application.dataPath,
+                "ShaderGraph",
+                "MaterialGraphProject",
+                "Assets",
+                "UnityShaderEditor",
+                "Editor",
+                "Templates"
+            };
+
+            string result3 = path3[0];
+            for (int i = 1; i < path3.Count; i++)
+                result3 = Path.Combine(result3, path3[i]);
+
+            result3 = Path.Combine(result3, templateName);
+            result3 = Path.GetFullPath(result3);
+
+            if (File.Exists(result3))
+                return result3;
+
             return string.Empty;
         }
 

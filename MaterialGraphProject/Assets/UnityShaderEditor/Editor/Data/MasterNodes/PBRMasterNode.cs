@@ -133,6 +133,7 @@ namespace UnityEditor.ShaderGraph
             var activeNodeList = ListPool<INode>.Get();
             NodeUtils.DepthFirstCollectNodesFromNode(activeNodeList, this);
 
+            // collect the shader properties from the graph, and from each node
             var shaderProperties = new PropertyCollector();
 
             var abstractMaterialGraph = owner as AbstractMaterialGraph;

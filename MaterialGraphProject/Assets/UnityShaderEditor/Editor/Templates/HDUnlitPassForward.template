@@ -1,4 +1,3 @@
-// Unlit shader always render in forward
 Pass
 {
     Name "ForwardUnlit"
@@ -23,17 +22,19 @@ Pass
 
     #define UNITY_MATERIAL_UNLIT // Need to be define before including Material.hlsl
 
-    #include "ShaderLibrary/common.hlsl"
-    #include "../../ShaderVariables.hlsl"
-    #include "../../ShaderPass/FragInputs.hlsl"
-    #include "../../ShaderPass/ShaderPass.cs.hlsl"
+    #include "CoreRP/ShaderLibrary/common.hlsl"
+
+    // NOCHECKIN: we have to replace this with some non-hardcoded path to the HDRP global stuff
+    #include "../HDRenderPipeline/HDRP/ShaderVariables.hlsl"
+    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/FragInputs.hlsl"
+    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/ShaderPass.cs.hlsl"
 
     ${Defines}
     
-    #include "../../Material/Material.hlsl"
+    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/Material/Material.hlsl"
 
     // This include will define the various Attributes/Varyings structure
-    #include "../../ShaderPass/VaryingMesh.hlsl"
+    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/VaryingMesh.hlsl"
 
     ${Graph}
 
@@ -70,7 +71,8 @@ Pass
         builtinData.depthOffset = 0.0;
     }
 
-    #include "../../ShaderPass/${ShaderPassInclude}.hlsl"
+    // NOCHECKIN this path needs to not be hard-coded...  :(
+    #include "Assets/ScriptableRenderPipeline/ScriptableRenderPipeline/HDRenderPipeline/HDRP/ShaderPass/${ShaderPassInclude}"
 
     ENDHLSL
 }
