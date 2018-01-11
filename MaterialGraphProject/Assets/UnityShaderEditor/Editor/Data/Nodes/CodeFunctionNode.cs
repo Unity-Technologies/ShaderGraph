@@ -42,6 +42,9 @@ namespace UnityEditor.ShaderGraph
         protected struct SamplerState
         {}
 
+        protected struct Gradient
+        {}
+
         protected struct DynamicDimensionVector
         {}
 
@@ -153,6 +156,10 @@ namespace UnityEditor.ShaderGraph
             if (t == typeof(Cubemap))
             {
                 return SlotValueType.Cubemap;
+            }
+            if (t == typeof(Gradient))
+            {
+                return SlotValueType.Gradient;
             }
             if (t == typeof(SamplerState))
             {

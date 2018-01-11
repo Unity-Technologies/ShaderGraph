@@ -11,4 +11,13 @@ bool IsGammaSpace()
     #endif
 }
 
+struct Gradient
+{
+    int type;
+    int colorsLength;
+    int alphasLength;
+    float4 colors[8];
+    float2 alphas[8];
+};
+
 #endif // UNITY_SHADER_GRAPH_INCLUDED
