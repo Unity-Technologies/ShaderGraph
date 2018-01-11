@@ -149,7 +149,7 @@ namespace UnityEditor.ShaderGraph
             finalShader.AddShaderChunk("}", false);
 
             var lwSub = new LightWeightPBRSubShader();
-            foreach (var subshader in lwSub.GetSubshader(this, mode))
+            foreach (var subshader in lwSub.GetSubshaderFromGraph(this, mode))
                 finalShader.AddShaderChunk(subshader, true);
 
             finalShader.Deindent();

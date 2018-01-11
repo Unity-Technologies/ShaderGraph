@@ -1,0 +1,9 @@
+{
+    "m_Name": "ShaderTest",
+    "m_SurfaceShader": "\r\nSurfaceDescription PopulateSurfaceData(SurfaceInputs IN) \r\n{\r\n\tSurfaceDescription surface = (SurfaceDescription)0;\r\n\tsurface.Albedo = float3(1.0,0.0,0.0);\r\n\tsurface.Normal = float3(0.0,0.0,1.0);\r\n\treturn surface;\r\n}",
+    "m_SerializedProperties": [],
+    "m_Model": 1,
+    "m_AlphaMode": 0,
+    "m_UsePerPixelNormal": false,
+    "m_UseAlphaClip": false
+}
