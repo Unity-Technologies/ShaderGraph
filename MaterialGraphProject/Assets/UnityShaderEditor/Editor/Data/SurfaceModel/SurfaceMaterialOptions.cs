@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEditor.ShaderGraph.Drawing.Controls;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -81,6 +82,9 @@ namespace UnityEditor.ShaderGraph
 
         [SerializeField]
         private RenderType m_RenderType = RenderType.Opaque;
+        
+        [SerializeField]
+        private bool m_AlphaClip = false;
 
         [SerializeField]
         private int m_LOD = 200;
@@ -147,13 +151,14 @@ namespace UnityEditor.ShaderGraph
             GUILayout.EndVertical();
         }*/
 
-        public BlendMode srcBlend { get { return m_SrcBlend; } set { m_SrcBlend = value; } }
+        public BlendMode srcBlend { get { return m_SrcBlend; } set { m_SrcBlend = value; } }     
         public BlendMode dstBlend { get { return m_DstBlend; } set { m_DstBlend = value; } }
         public CullMode cullMode { get { return m_CullMode; } set { m_CullMode = value; } }
         public ZTest zTest { get { return m_ZTest; } set { m_ZTest = value; } }
         public ZWrite zWrite { get { return m_ZWrite; } set { m_ZWrite = value; } }
         public RenderQueue renderQueue { get { return m_RenderQueue; } set { m_RenderQueue = value; } }
         public RenderType renderType { get { return m_RenderType; } set { m_RenderType = value; } }
+        public bool alphaClip { get { return m_AlphaClip; } set { m_AlphaClip = value; } }
         public int lod { get { return m_LOD; } set { m_LOD = value; } }
     }
 }

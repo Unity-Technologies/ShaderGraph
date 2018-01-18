@@ -667,7 +667,61 @@ EnumConversionControlView > Label {
     padding-bottom: 0;
 }
 
+SurfaceMaterialOptionsControlView {
+    margin-left: 7;
+    margin-right: 8;
+    margin-top: 4;
+    margin-bottom: 4;
+}
 
+SurfaceMaterialOptionsControlView > Label {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 8;
+}
+
+SurfaceMaterialOptionsControlView > #Container {
+    flex-grow: 1;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+SurfaceMaterialOptionsControlView > #Container > #Entry {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+SurfaceMaterialOptionsControlView > #Container > #Entry > Label {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    width: 60;
+}
+
+SurfaceMaterialOptionsControlView > #Container > #Entry > EnumField {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 2;
+    margin-bottom: 2;
+}
+
+SurfaceMaterialOptionsControlView > #Container > #Entry > Toggle {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 2;
+    margin-bottom: 2;
+    align-self: center;
+}
 
 /* TEMP STUFF THAT SHOULD ACTUALLY STAY IN GRAPHVIEW */
 

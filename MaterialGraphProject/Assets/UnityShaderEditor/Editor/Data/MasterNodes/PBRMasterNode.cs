@@ -38,45 +38,63 @@ namespace UnityEditor.ShaderGraph
             Metallic
         }
 
-        public enum AlphaMode
+        public enum RenderingMode
         {
             Opaque,
-            AlphaBlend,
-            AdditiveBlend
+            Cutout,
+            Transparent,
+            Fade,
+            Additive,
+            Multiply,
+            Custom
         }
 
         [SerializeField]
-        private Model m_Model = Model.Metallic;
+        private Model m_Workflow = Model.Metallic;
 
-        [EnumControl("")]
-        public Model model
+        [EnumControl("Workflow")]
+        public Model workflow
         {
-            get { return m_Model; }
+            get { return m_Workflow; }
             set
             {
-                if (m_Model == value)
+                if (m_Workflow == value)
                     return;
 
-                m_Model = value;
+                m_Workflow = value;
                 UpdateNodeAfterDeserialization();
                 Dirty(ModificationScope.Topological);
             }
         }
 
         [SerializeField]
-        private AlphaMode m_AlphaMode;
+        private RenderingMode m_Rendering;
 
-        [EnumControl("")]
-        public AlphaMode alphaMode
+        [EnumControl("Rendering")]
+        public RenderingMode rendering
         {
-            get { return m_AlphaMode; }
+            get { return m_Rendering; }
             set
             {
-                if (m_AlphaMode == value)
+                if (m_Rendering == value)
                     return;
 
-                m_AlphaMode = value;
+                m_Rendering = value;
                 Dirty(ModificationScope.Graph);
+            }
+        }
+
+        [SerializeField]
+        private SurfaceMaterialOptions m_SurfaceMaterialOptions;
+
+        [SurfaceMaterialOptionsControl("Advanced")]
+        public SurfaceMaterialOptions surfaceMaterialOptions
+        {
+            get { return m_SurfaceMaterialOptions; }
+            set
+            {
+                // TODO - Add check
+                m_SurfaceMaterialOptions = value;
             }
         }
 
@@ -97,7 +115,7 @@ namespace UnityEditor.ShaderGraph
             AddSlot(new ColorRGBMaterialSlot(AlbedoSlotId, AlbedoSlotName, AlbedoSlotName, SlotType.Input, Color.grey, ShaderStage.Fragment));
             AddSlot(new Vector3MaterialSlot(NormalSlotId, NormalSlotName, NormalSlotName, SlotType.Input, new Vector3(0, 0, 1), ShaderStage.Fragment));
             AddSlot(new ColorRGBMaterialSlot(EmissionSlotId, EmissionSlotName, EmissionSlotName, SlotType.Input, Color.black, ShaderStage.Fragment));
-            if (model == Model.Metallic)
+            if (workflow == Model.Metallic)
                 AddSlot(new Vector1MaterialSlot(MetallicSlotId, MetallicSlotName, MetallicSlotName, SlotType.Input, 0, ShaderStage.Fragment));
             else
                 AddSlot(new ColorRGBMaterialSlot(SpecularSlotId, SpecularSlotName, SpecularSlotName, SlotType.Input, Color.grey, ShaderStage.Fragment));
@@ -114,7 +132,7 @@ namespace UnityEditor.ShaderGraph
                 AlbedoSlotId,
                 NormalSlotId,
                 EmissionSlotId,
-                model == Model.Metallic ? MetallicSlotId : SpecularSlotId,
+                workflow == Model.Metallic ? MetallicSlotId : SpecularSlotId,
                 SmoothnessSlotId,
                 OcclusionSlotId,
                 AlphaSlotId,

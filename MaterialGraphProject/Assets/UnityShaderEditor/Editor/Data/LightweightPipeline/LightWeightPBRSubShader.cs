@@ -188,18 +188,21 @@ namespace UnityEditor.ShaderGraph
             if (masterNode.IsSlotConnected(PBRMasterNode.NormalSlotId))
                 defines.AddShaderChunk("#define _NORMALMAP 1", true);
 
-            if (masterNode.model == PBRMasterNode.Model.Specular)
+            if (masterNode.workflow == PBRMasterNode.Model.Specular)
                 defines.AddShaderChunk("#define _SPECULAR_SETUP 1", true);
 
-            switch (masterNode.alphaMode)
+            switch (masterNode.rendering)
             {
-                case PBRMasterNode.AlphaMode.AlphaBlend:
-                case PBRMasterNode.AlphaMode.AdditiveBlend:
+                case PBRMasterNode.RenderingMode.Transparent:
+                case PBRMasterNode.RenderingMode.Fade:
+                case PBRMasterNode.RenderingMode.Additive:
+                case PBRMasterNode.RenderingMode.Multiply:
                     defines.AddShaderChunk("#define _AlphaOut 1", true);
                     break;
             }
 
-            if (masterNode.IsSlotConnected(PBRMasterNode.AlphaThresholdSlotId))
+            if (masterNode.rendering == PBRMasterNode.RenderingMode.Cutout || 
+                masterNode.rendering == PBRMasterNode.RenderingMode.Custom &&  masterNode.surfaceMaterialOptions.alphaClip )
                     defines.AddShaderChunk("#define _AlphaClip 1", true);
 
             var templateLocation = ShaderGenerator.GetTemplatePath(template);
@@ -239,9 +242,9 @@ namespace UnityEditor.ShaderGraph
             subShader.AddShaderChunk("Tags{ \"RenderPipeline\" = \"LightweightPipeline\"}", true);
 
             var materialOptions = new SurfaceMaterialOptions();
-            switch (masterNode.alphaMode)
+            switch (masterNode.rendering)
             {
-                case PBRMasterNode.AlphaMode.Opaque:
+                case PBRMasterNode.RenderingMode.Opaque:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
                     materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
                     materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
@@ -250,7 +253,25 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
                     break;
-                case PBRMasterNode.AlphaMode.AlphaBlend:
+                case PBRMasterNode.RenderingMode.Cutout:
+                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
+                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
+                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
+                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
+                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
+                    break;
+                case PBRMasterNode.RenderingMode.Transparent:
+                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
+                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
+                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    break;
+                case PBRMasterNode.RenderingMode.Fade:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
                     materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
                     materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
@@ -259,7 +280,7 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
                     break;
-                case PBRMasterNode.AlphaMode.AdditiveBlend:
+                case PBRMasterNode.RenderingMode.Additive:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
                     materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
                     materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
@@ -267,6 +288,24 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    break;
+                case PBRMasterNode.RenderingMode.Multiply:
+                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.DstColor;
+                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
+                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
+                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    break;
+                case PBRMasterNode.RenderingMode.Custom:
+                    materialOptions.srcBlend = masterNode.surfaceMaterialOptions.srcBlend;
+                    materialOptions.dstBlend = masterNode.surfaceMaterialOptions.dstBlend;
+                    materialOptions.cullMode = masterNode.surfaceMaterialOptions.cullMode;
+                    materialOptions.zTest = masterNode.surfaceMaterialOptions.zTest;
+                    materialOptions.zWrite = masterNode.surfaceMaterialOptions.zWrite;
+                    materialOptions.renderQueue = masterNode.surfaceMaterialOptions.renderQueue;
+                    materialOptions.renderType = masterNode.surfaceMaterialOptions.renderType;
                     break;
             }
 
@@ -278,7 +317,7 @@ namespace UnityEditor.ShaderGraph
                 GetShaderPassFromTemplate(
                     "lightweightPBRForwardPass.template",
                     masterNode,
-                    masterNode.model == PBRMasterNode.Model.Metallic ? m_ForwardPassMetallic : m_ForwardPassSpecular,
+                    masterNode.workflow == PBRMasterNode.Model.Metallic ? m_ForwardPassMetallic : m_ForwardPassSpecular,
                     mode,
                     materialOptions),
                 true);
