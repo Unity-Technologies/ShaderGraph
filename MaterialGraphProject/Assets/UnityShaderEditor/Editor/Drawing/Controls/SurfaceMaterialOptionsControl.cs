@@ -109,7 +109,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Controls
             var renderTypeEntry = new VisualElement { name = "Entry" };
             m_RenderTypeEnum = new EnumField((Enum)m_SurfaceMaterialOptions.renderType);
             m_RenderTypeEnum.RegisterCallback<ChangeEvent<Enum>, string>(OnChangeEnum, "m_RenderType");
-            renderTypeEntry.Add(new Label("Queue"));
+            renderTypeEntry.Add(new Label("Type"));
             renderTypeEntry.Add(m_RenderTypeEnum);
             m_Container.Add(renderTypeEntry);
 
