@@ -82,7 +82,10 @@ namespace UnityEditor.ShaderGraph
 
         [SerializeField]
         private RenderType m_RenderType = RenderType.Opaque;
-        
+
+        [SerializeField]
+        private bool m_AlphaBlend = false;
+
         [SerializeField]
         private bool m_AlphaClip = false;
 
@@ -158,6 +161,7 @@ namespace UnityEditor.ShaderGraph
         public ZWrite zWrite { get { return m_ZWrite; } set { m_ZWrite = value; } }
         public RenderQueue renderQueue { get { return m_RenderQueue; } set { m_RenderQueue = value; } }
         public RenderType renderType { get { return m_RenderType; } set { m_RenderType = value; } }
+        public bool alphaBlend { get { return m_AlphaBlend; } set { m_AlphaBlend = value; } }
         public bool alphaClip { get { return m_AlphaClip; } set { m_AlphaClip = value; } }
         public int lod { get { return m_LOD; } set { m_LOD = value; } }
     }

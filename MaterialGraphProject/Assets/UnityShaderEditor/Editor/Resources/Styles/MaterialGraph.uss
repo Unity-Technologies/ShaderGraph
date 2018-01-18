@@ -668,24 +668,64 @@ EnumConversionControlView > Label {
 }
 
 SurfaceMaterialOptionsControlView {
-    margin-left: 7;
+    margin-left: 6;
     margin-right: 8;
     margin-top: 4;
     margin-bottom: 4;
 }
 
-SurfaceMaterialOptionsControlView > Label {
+SurfaceMaterialOptionsControlView > #Title {
+    flex-direction: row;
+    flex-grow: 1;
     margin-left: 0;
     margin-right: 0;
     margin-top: 0;
-    margin-bottom: 8;
+    margin-bottom: 0;
+}
+
+SurfaceMaterialOptionsControlView > #Title > Label {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    align-items: center;
+}
+
+SurfaceMaterialOptionsControlView > #Title > Button {
+    width: 48;
+    height: 16;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    align-items: center;
+}
+
+SurfaceMaterialOptionsControlView > #Title > Button > Label {
+    font-size: 9;
+    flex-grow: 1;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    text-alignment:middle-right;
 }
 
 SurfaceMaterialOptionsControlView > #Container {
     flex-grow: 1;
     margin-left: 0;
     margin-right: 0;
-    margin-top: 0;
+    margin-top: 8;
     margin-bottom: 0;
 }
 

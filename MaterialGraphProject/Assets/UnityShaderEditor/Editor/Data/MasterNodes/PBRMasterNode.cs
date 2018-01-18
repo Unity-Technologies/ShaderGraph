@@ -87,14 +87,26 @@ namespace UnityEditor.ShaderGraph
         [SerializeField]
         private SurfaceMaterialOptions m_SurfaceMaterialOptions;
 
+        [SerializeField]
+        private SurfaceMaterialOptions m_CustomMaterialOptions;
+
         [SurfaceMaterialOptionsControl("Advanced")]
         public SurfaceMaterialOptions surfaceMaterialOptions
         {
-            get { return m_SurfaceMaterialOptions; }
+            get 
+            { 
+                if(rendering == RenderingMode.Custom)
+                    return m_CustomMaterialOptions;
+                else
+                    return m_SurfaceMaterialOptions; 
+            }
             set
             {
                 // TODO - Add check
-                m_SurfaceMaterialOptions = value;
+                if(rendering == RenderingMode.Custom)
+                    m_CustomMaterialOptions = value;
+                else
+                    m_SurfaceMaterialOptions = value;
             }
         }
 

@@ -191,7 +191,7 @@ namespace UnityEditor.ShaderGraph
             if (masterNode.workflow == PBRMasterNode.Model.Specular)
                 defines.AddShaderChunk("#define _SPECULAR_SETUP 1", true);
 
-            switch (masterNode.rendering)
+            /*switch (masterNode.rendering)
             {
                 case PBRMasterNode.RenderingMode.Transparent:
                 case PBRMasterNode.RenderingMode.Fade:
@@ -199,10 +199,12 @@ namespace UnityEditor.ShaderGraph
                 case PBRMasterNode.RenderingMode.Multiply:
                     defines.AddShaderChunk("#define _AlphaOut 1", true);
                     break;
-            }
+            }*/
 
-            if (masterNode.rendering == PBRMasterNode.RenderingMode.Cutout || 
-                masterNode.rendering == PBRMasterNode.RenderingMode.Custom &&  masterNode.surfaceMaterialOptions.alphaClip )
+            if (materialOptions.alphaBlend)
+                    defines.AddShaderChunk("#define _AlphaOut 1", true);
+
+            if (materialOptions.alphaClip)
                     defines.AddShaderChunk("#define _AlphaClip 1", true);
 
             var templateLocation = ShaderGenerator.GetTemplatePath(template);
@@ -252,6 +254,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
+                    materialOptions.alphaBlend = false;
+                    materialOptions.alphaClip = false;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Cutout:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
@@ -261,6 +266,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
+                    materialOptions.alphaBlend = false;
+                    materialOptions.alphaClip = true;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Transparent:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
@@ -270,6 +278,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    materialOptions.alphaBlend = true;
+                    materialOptions.alphaClip = false;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Fade:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
@@ -279,6 +290,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    materialOptions.alphaBlend = true;
+                    materialOptions.alphaClip = false;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Additive:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
@@ -288,6 +302,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    materialOptions.alphaBlend = true;
+                    materialOptions.alphaClip = false;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Multiply:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.DstColor;
@@ -297,6 +314,9 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                    materialOptions.alphaBlend = true;
+                    materialOptions.alphaClip = false;
+                    masterNode.surfaceMaterialOptions = materialOptions;
                     break;
                 case PBRMasterNode.RenderingMode.Custom:
                     materialOptions.srcBlend = masterNode.surfaceMaterialOptions.srcBlend;
@@ -306,6 +326,8 @@ namespace UnityEditor.ShaderGraph
                     materialOptions.zWrite = masterNode.surfaceMaterialOptions.zWrite;
                     materialOptions.renderQueue = masterNode.surfaceMaterialOptions.renderQueue;
                     materialOptions.renderType = masterNode.surfaceMaterialOptions.renderType;
+                    materialOptions.alphaBlend = masterNode.surfaceMaterialOptions.alphaBlend;
+                    materialOptions.alphaClip = masterNode.surfaceMaterialOptions.alphaClip;
                     break;
             }
 
