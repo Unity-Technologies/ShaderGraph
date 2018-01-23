@@ -48,7 +48,7 @@ namespace UnityEditor.ShaderGraph
 
             properties.AddShaderProperty(new ColorShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForNode(),
+                referenceName = GetVariableNameForNode(),
                 generatePropertyBlock = false,
                 value = color,
                 HDR = false

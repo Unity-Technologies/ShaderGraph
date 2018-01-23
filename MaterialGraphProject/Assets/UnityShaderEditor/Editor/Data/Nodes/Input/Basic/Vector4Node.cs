@@ -48,7 +48,7 @@ namespace UnityEditor.ShaderGraph
 
             properties.AddShaderProperty(new Vector4ShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForNode(),
+                referenceName = GetVariableNameForNode(),
                 generatePropertyBlock = false,
                 value = value
             });

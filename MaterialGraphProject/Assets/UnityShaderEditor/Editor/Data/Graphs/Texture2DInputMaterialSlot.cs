@@ -51,7 +51,7 @@ namespace UnityEditor.ShaderGraph
                 throw new Exception(string.Format("Slot {0} either has no owner, or the owner is not a {1}", this, typeof(AbstractMaterialNode)));
 
             var prop = new TextureShaderProperty();
-            prop.overrideReferenceName = matOwner.GetVariableNameForSlot(id);
+            prop.referenceName = matOwner.GetVariableNameForSlot(id);
             prop.modifiable = false;
             prop.generatePropertyBlock = true;
             prop.value.texture = texture;

@@ -82,7 +82,7 @@ namespace UnityEditor.ShaderGraph
 
             properties.AddShaderProperty(new FloatShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForNode(),
+                referenceName = GetVariableNameForNode(),
                 generatePropertyBlock = false,
                 value = value
             });

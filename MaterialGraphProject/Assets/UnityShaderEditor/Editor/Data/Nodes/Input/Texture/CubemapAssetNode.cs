@@ -44,7 +44,7 @@ namespace UnityEditor.ShaderGraph
         {
             properties.AddShaderProperty(new CubemapShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForSlot(OutputSlotId),
+                referenceName = GetVariableNameForSlot(OutputSlotId),
                 generatePropertyBlock = true,
                 value = m_Cubemap,
                 modifiable = false

@@ -68,7 +68,7 @@ namespace UnityEditor.ShaderGraph
         {
             properties.AddShaderProperty(new SamplerStateShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForNode(),
+                referenceName = GetVariableNameForNode(),
                 generatePropertyBlock = false,
 
                 value = new TextureSamplerState()

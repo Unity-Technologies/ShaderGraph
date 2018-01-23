@@ -61,7 +61,7 @@ namespace UnityEditor.ShaderGraph
 
             var property = new Vector3ShaderProperty()
             {
-                overrideReferenceName = matOwner.GetVariableNameForSlot(id),
+                referenceName = matOwner.GetVariableNameForSlot(id),
                 generatePropertyBlock = false,
                 value = value
             };

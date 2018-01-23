@@ -114,7 +114,7 @@ namespace UnityEditor.ShaderGraph
                     throw new ArgumentOutOfRangeException();
             }
 
-            property.overrideReferenceName = matOwner.GetVariableNameForSlot(id);
+            property.referenceName = matOwner.GetVariableNameForSlot(id);
             property.generatePropertyBlock = false;
             properties.AddShaderProperty(property);
         }

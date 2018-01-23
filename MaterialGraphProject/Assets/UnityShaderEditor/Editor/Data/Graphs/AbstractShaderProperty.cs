@@ -11,7 +11,10 @@ namespace UnityEditor.ShaderGraph
         private T m_Value;
 
         [SerializeField]
-        private string m_Name;
+        private string m_DisplayName;
+
+        [SerializeField]
+        private string m_ReferenceName;
 
         [SerializeField]
         private bool m_GeneratePropertyBlock = true;
@@ -29,30 +32,23 @@ namespace UnityEditor.ShaderGraph
         {
             get
             {
-                if (string.IsNullOrEmpty(m_Name))
+                if (string.IsNullOrEmpty(m_DisplayName))
                     return guid.ToString();
-                return m_Name;
+                return m_DisplayName;
             }
-            set { m_Name = value; }
+            set { m_DisplayName = value; }
         }
-
-        string m_DefaultReferenceName;
 
         public string referenceName
         {
             get
             {
-                if (string.IsNullOrEmpty(overrideReferenceName))
-                {
-                    if (string.IsNullOrEmpty(m_DefaultReferenceName))
-                        m_DefaultReferenceName = string.Format("{0}_{1}", propertyType, GuidEncoder.Encode(guid));
-                    return m_DefaultReferenceName;
-                }
-                return overrideReferenceName;
+                if (string.IsNullOrEmpty(m_ReferenceName))
+                    return string.Format("{0}_{1}", propertyType, GuidEncoder.Encode(guid));
+                return m_ReferenceName;
             }
+            set { m_ReferenceName = value; }
         }
-
-        public string overrideReferenceName { get; set; }
 
         public abstract PropertyType propertyType { get; }
 

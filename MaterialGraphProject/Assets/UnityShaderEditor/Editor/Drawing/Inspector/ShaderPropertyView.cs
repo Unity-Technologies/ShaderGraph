@@ -18,6 +18,9 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
             this.graph = graph;
             this.property = property;
 
+            var nameField = new TextField { name = "name", value = property.referenceName };
+            nameField.OnValueChanged(OnNameChanged);
+            Add(nameField);
 
             var displayNameField = new TextField { name = "displayName", value = property.displayName };
             displayNameField.OnValueChanged(OnDisplayNameChanged);
@@ -90,6 +93,15 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
             if (newValue != fProp.value.cubemap)
             {
                 fProp.value.cubemap = newValue;
+                NotifyNodes();
+            }
+        }
+
+        void OnNameChanged(ChangeEvent<string> evt)
+        {
+            if (evt.newValue != property.referenceName)
+            {
+                property.referenceName = NodeUtils.GetHLSLSafeName(evt.newValue);
                 NotifyNodes();
             }
         }

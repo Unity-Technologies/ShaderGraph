@@ -204,8 +204,8 @@ namespace UnityEditor.Graphing
         public static string GetHLSLSafeName(string input)
         {
             char[] arr = input.ToCharArray();
-            arr = Array.FindAll<char>(arr, (c => (Char.IsLetterOrDigit(c))));
-            return new string(arr);
+            arr = Array.FindAll(arr, char.IsLetterOrDigit);
+            return string.Format("{1}", '_', new string(arr));
         }
     }
 }

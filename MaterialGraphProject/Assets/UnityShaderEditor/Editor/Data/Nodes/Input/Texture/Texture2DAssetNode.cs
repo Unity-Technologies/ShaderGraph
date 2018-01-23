@@ -44,7 +44,7 @@ namespace UnityEditor.ShaderGraph
         {
             properties.AddShaderProperty(new TextureShaderProperty()
             {
-                overrideReferenceName = GetVariableNameForSlot(OutputSlotId),
+                referenceName = GetVariableNameForSlot(OutputSlotId),
                 generatePropertyBlock = true,
                 value = m_Texture,
                 modifiable = false

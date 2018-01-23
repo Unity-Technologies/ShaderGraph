@@ -150,7 +150,7 @@ namespace UnityEditor.ShaderGraph
 
             properties.AddShaderProperty(new Vector4ShaderProperty
             {
-                overrideReferenceName = string.Format("_{0}_Flip", GetVariableNameForNode()),
+                referenceName = string.Format("_{0}_Flip", GetVariableNameForNode()),
                 generatePropertyBlock = false
             });
         }

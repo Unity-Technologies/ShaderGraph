@@ -118,19 +118,19 @@ namespace UnityEditor.ShaderGraph
 
             properties.AddShaderProperty(new Vector4ShaderProperty()
             {
-                overrideReferenceName = string.Format("_{0}_Red", GetVariableNameForNode()),
+                referenceName = string.Format("_{0}_Red", GetVariableNameForNode()),
                 generatePropertyBlock = false
             });
 
             properties.AddShaderProperty(new Vector4ShaderProperty()
             {
-                overrideReferenceName = string.Format("_{0}_Green", GetVariableNameForNode()),
+                referenceName = string.Format("_{0}_Green", GetVariableNameForNode()),
                 generatePropertyBlock = false
             });
 
             properties.AddShaderProperty(new Vector4ShaderProperty()
             {
-                overrideReferenceName = string.Format("_{0}_Blue", GetVariableNameForNode()),
+                referenceName = string.Format("_{0}_Blue", GetVariableNameForNode()),
                 generatePropertyBlock = false
             });
         }
