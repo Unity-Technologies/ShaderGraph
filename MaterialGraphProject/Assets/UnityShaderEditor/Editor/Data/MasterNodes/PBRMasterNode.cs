@@ -110,16 +110,16 @@ namespace UnityEditor.ShaderGraph
             // we support
             RemoveSlotsNameNotMatching(
                 new[]
-            {
-                AlbedoSlotId,
-                NormalSlotId,
-                EmissionSlotId,
-                model == Model.Metallic ? MetallicSlotId : SpecularSlotId,
-                SmoothnessSlotId,
-                OcclusionSlotId,
-                AlphaSlotId,
-                AlphaThresholdSlotId
-            }, true);
+                {
+                    AlbedoSlotId,
+                    NormalSlotId,
+                    EmissionSlotId,
+                    (model == Model.Metallic) ? MetallicSlotId : SpecularSlotId,
+                    SmoothnessSlotId,
+                    OcclusionSlotId,
+                    AlphaSlotId,
+                    AlphaThresholdSlotId
+                }, true);
         }
 
         public override string GetShader(GenerationMode mode, string outputName, out List<PropertyCollector.TextureInfo> configuredTextures)
@@ -129,13 +129,14 @@ namespace UnityEditor.ShaderGraph
 
             // collect the shader properties from the graph, and from each node
             var shaderProperties = new PropertyCollector();
+            {
+                var abstractMaterialGraph = owner as AbstractMaterialGraph;
+                if (abstractMaterialGraph != null)
+                    abstractMaterialGraph.CollectShaderProperties(shaderProperties, mode);
 
-            var abstractMaterialGraph = owner as AbstractMaterialGraph;
-            if (abstractMaterialGraph != null)
-                abstractMaterialGraph.CollectShaderProperties(shaderProperties, mode);
-
-            foreach (var activeNode in activeNodeList.OfType<AbstractMaterialNode>())
-                activeNode.CollectShaderProperties(shaderProperties, mode);
+                foreach (var activeNode in activeNodeList.OfType<AbstractMaterialNode>())
+                    activeNode.CollectShaderProperties(shaderProperties, mode);
+            }
 
             var finalShader = new ShaderGenerator();
             finalShader.AddShaderChunk(string.Format(@"Shader ""{0}""", outputName), false);
@@ -149,9 +150,14 @@ namespace UnityEditor.ShaderGraph
             finalShader.Deindent();
             finalShader.AddShaderChunk("}", false);
 
+            // lightweight pipeline -- TODO: remove this if LT pipeline is not installed
             var lwSub = new LightWeightPBRSubShader();
             foreach (var subshader in lwSub.GetSubshader(this, mode))
                 finalShader.AddShaderChunk(subshader, true);
+
+			// HD pipeline -- TODO: remove this if HD pipeline is not installed
+            var hdSub = new HDPBRSubShader();
+            finalShader.AddShaderChunk(hdSub.GetSubshader(this, mode), true);
 
             finalShader.Deindent();
             finalShader.AddShaderChunk("}", false);

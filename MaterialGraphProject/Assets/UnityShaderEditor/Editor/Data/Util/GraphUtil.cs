@@ -198,8 +198,13 @@ namespace UnityEditor.ShaderGraph
             if (isMaster)
             {
                 foreach (var slot in slots)
-                    surfaceDescriptionStruct.AddShaderChunk(String.Format("{0} {1};", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, slot.concreteValueType), NodeUtils.GetHLSLSafeName(slot.shaderOutputName)), false);
-                surfaceDescriptionStruct.Deindent();
+                {
+                    if (slot != null)
+                    {
+                        surfaceDescriptionStruct.AddShaderChunk(String.Format("{0} {1};", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, slot.concreteValueType), NodeUtils.GetHLSLSafeName(slot.shaderOutputName)), false);
+                    }
+                }
+                surfaceDescriptionStruct.Deindent();    
             }
             else
             {

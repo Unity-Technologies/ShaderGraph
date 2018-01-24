@@ -74,8 +74,8 @@ namespace UnityEditor.ShaderGraph
             var builder = new ShaderStringBuilder();
             builder.IncreaseIndent();
             builder.IncreaseIndent();
-            var vertexInputs = new ShaderGenerator();
 
+            var vertexInputs = new ShaderGenerator();
             var surfaceDescriptionFunction = new ShaderGenerator();
             var surfaceDescriptionStruct = new ShaderGenerator();
             var shaderFunctionVisitor = new ShaderGenerator();
@@ -177,7 +177,7 @@ namespace UnityEditor.ShaderGraph
             var localSurfaceInputs = new ShaderGenerator();
             var surfaceOutputRemap = new ShaderGenerator();
 
-			// new code
+			// new code -- TODO should we build these by inspecting actual nodes?
            var reqs = ShaderGraphRequirements.none;
            reqs.requiresNormal |= NeededCoordinateSpace.World;
            reqs.requiresTangent |= NeededCoordinateSpace.World;
@@ -216,7 +216,8 @@ namespace UnityEditor.ShaderGraph
             resultPass = resultPass.Replace("${LocalPixelShader}", localPixelShader.GetShaderString(3));
             resultPass = resultPass.Replace("${SurfaceInputs}", localSurfaceInputs.GetShaderString(3));
             resultPass = resultPass.Replace("${SurfaceOutputRemap}", surfaceOutputRemap.GetShaderString(3));
-            resultPass = resultPass.Replace("${LightMode}", pass.Name);
+            resultPass = resultPass.Replace("${LightMode}", pass.LightMode);
+            resultPass = resultPass.Replace("${PassName}", pass.Name);
             resultPass = resultPass.Replace("${ShaderPassInclude}", pass.ShaderPassInclude);
 
             resultPass = resultPass.Replace("${Tags}", tagsVisitor.GetShaderString(2));
@@ -228,7 +229,7 @@ namespace UnityEditor.ShaderGraph
             return resultPass;
         }
 
-        public IEnumerable<string> GetSubshader(UnlitMasterNode masterNode, GenerationMode mode)
+        public string GetSubshader(UnlitMasterNode masterNode, GenerationMode mode)
         {
             var subShader = new ShaderGenerator();
             subShader.AddShaderChunk("SubShader", true);

@@ -1,6 +1,7 @@
 Pass
 {
-    Name "ForwardUnlit"
+    // based on HDUnlitPassForward.template
+    Name "${PassName}"
     Tags { "LightMode" = "${LightMode}" }
 
     ${Tags}
@@ -36,14 +37,17 @@ Pass
 
     void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
     {
+        // LocalPixelShader
         ${LocalPixelShader}
 
         SurfaceInputs surfaceInput;
+        // Surface Inputs
         ${SurfaceInputs}
 
         SurfaceDescription surf = PopulateSurfaceData(surfaceInput);
         float3 Color = 0;
         float Alpha = 0;
+        // Surface Output Remap
         ${SurfaceOutputRemap}
         
         surfaceData.color = Color;

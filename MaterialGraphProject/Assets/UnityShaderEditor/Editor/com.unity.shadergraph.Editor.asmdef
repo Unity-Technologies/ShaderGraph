@@ -1,5 +1,7 @@
 {
     "name": "com.unity.shadergraph.Editor",
+    "references": [],
+    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],

@@ -95,9 +95,10 @@ Shader ""Hidden/GraphErrorShader2""
             //Debug.Log(shaderString);
             return shaderString;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // ignored
+			// TODO: should do something with these errors -- just debug logging them for now
+            Debug.Log(e.Message);
         }
         configuredTextures = new List<PropertyCollector.TextureInfo>();
         return null;

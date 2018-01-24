@@ -43,14 +43,16 @@ namespace UnityEditor.ShaderGraph
             var activeNodeList = ListPool<INode>.Get();
             NodeUtils.DepthFirstCollectNodesFromNode(activeNodeList, this);
 
+            // collect the shader properties from the graph, and from each node
             var shaderProperties = new PropertyCollector();
+            {
+                var abstractMaterialGraph = owner as AbstractMaterialGraph;
+                if (abstractMaterialGraph != null)
+                    abstractMaterialGraph.CollectShaderProperties(shaderProperties, mode);
 
-            var abstractMaterialGraph = owner as AbstractMaterialGraph;
-            if (abstractMaterialGraph != null)
-                abstractMaterialGraph.CollectShaderProperties(shaderProperties, mode);
-
-            foreach (var activeNode in activeNodeList.OfType<AbstractMaterialNode>())
-                activeNode.CollectShaderProperties(shaderProperties, mode);
+                foreach (var activeNode in activeNodeList.OfType<AbstractMaterialNode>())
+                    activeNode.CollectShaderProperties(shaderProperties, mode);
+            }
 
             var finalShader = new ShaderGenerator();
             finalShader.AddShaderChunk(string.Format(@"Shader ""{0}""", outputName), false);

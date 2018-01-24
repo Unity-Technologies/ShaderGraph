@@ -1,0 +1,229 @@
+Pass
+{
+    // based on HDPBRPass.template
+    Name "${PassName}"
+    Tags { "LightMode" = "${LightMode}" }
+
+    //-------------------------------------------------------------------------------------
+    // Tags
+    //-------------------------------------------------------------------------------------
+${Tags}
+    //-------------------------------------------------------------------------------------
+    // End Tags
+    //-------------------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------------------
+    // Render Modes (Blend, Cull, ZTest, Stencil, etc)
+    //-------------------------------------------------------------------------------------
+${Blending}
+${Culling}
+${ZTest}
+${ZWrite}
+${Stencil}
+    //-------------------------------------------------------------------------------------
+    // End Render Modes
+    //-------------------------------------------------------------------------------------
+
+    HLSLPROGRAM
+    
+    #pragma target 4.5
+    #pragma only_renderers d3d11 ps4 xboxone vulkan metal
+    //#pragma enable_d3d11_debug_symbols
+
+    //-------------------------------------------------------------------------------------
+    // Variant
+    //-------------------------------------------------------------------------------------
+${VariantDefines}
+    //-------------------------------------------------------------------------------------
+    // End Variant
+    //-------------------------------------------------------------------------------------
+
+    #pragma vertex Vert
+    #pragma fragment Frag
+
+    #define UNITY_MATERIAL_LIT // Need to be define before including Material.hlsl
+
+    // Use surface gradient normal mapping as it handle correctly triplanar normal mapping and multiple UVSet
+    #define SURFACE_GRADIENT
+
+    // This shader support vertex modification (or not) TODO - move to PBR shader control
+//    #define HAVE_VERTEX_MODIFICATION
+
+    // If we use subsurface scattering, enable output split lighting (for forward pass)
+    #if defined(_MATID_SSS) && !defined(_SURFACE_TYPE_TRANSPARENT)
+    #define OUTPUT_SPLIT_LIGHTING
+    #endif
+
+    #include "CoreRP/ShaderLibrary/Common.hlsl"
+    #include "CoreRP/ShaderLibrary/Wind.hlsl"
+
+    #include "CoreRP/ShaderLibrary/NormalSurfaceGradient.hlsl"
+
+    #include "ShaderGraphLibrary/Functions.hlsl"
+
+    #include "HDRP/ShaderPass/FragInputs.hlsl"
+    #include "HDRP/ShaderPass/ShaderPass.cs.hlsl"
+
+    struct s_interpolators
+    {
+        //-------------------------------------------------------------------------------------
+        // Interpolators
+        //-------------------------------------------------------------------------------------
+${Interpolators}
+        //-------------------------------------------------------------------------------------
+        // End Interpolators
+        //-------------------------------------------------------------------------------------
+    };
+
+    //-------------------------------------------------------------------------------------
+    // Defines
+    //-------------------------------------------------------------------------------------
+${Defines}
+    //-------------------------------------------------------------------------------------
+    // End Defines
+    //-------------------------------------------------------------------------------------
+    
+    #include "HDRP/ShaderVariables.hlsl"
+    #ifdef DEBUG_DISPLAY
+        #include "HDRP/Debug/DebugDisplay.hlsl"
+    #endif
+    #include "HDRP/Material/Material.hlsl" 
+	#include "HDRP/Material/MaterialUtilities.hlsl"
+    
+    //-------------------------------------------------------------------------------------
+    // Graph generated code
+    //-------------------------------------------------------------------------------------
+${Graph}
+    //-------------------------------------------------------------------------------------
+    // End graph generated code
+    //-------------------------------------------------------------------------------------
+
+    void GetSurfaceAndBuiltinData(FragInputs fragInputs, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
+    {
+
+        // HACKS to make this work using ShaderGenerator.GenerateStandardTransforms()
+        // TODO: figure out something better
+        struct HackedFragInputs
+        {
+            float3 WorldSpaceNormal;
+            float3 WorldSpaceTangent;
+            float3 WorldSpaceBiTangent;
+            float3 WorldSpaceViewDirection;
+            float3 WorldSpacePosition;
+            float4 uv0;
+            float4 uv1;
+        };
+        HackedFragInputs IN;
+        IN.WorldSpaceNormal =           fragInputs.worldToTangent[2].xyz;
+        IN.WorldSpaceTangent =          fragInputs.worldToTangent[0].xyz;
+        IN.WorldSpaceBiTangent =        fragInputs.worldToTangent[1].xyz;
+        IN.WorldSpaceViewDirection =    V;
+        IN.WorldSpacePosition =         fragInputs.positionWS;
+        IN.uv0 =                        float4(fragInputs.texCoord0.xy, 0.0f, 0.0f);
+        IN.uv1 =                        float4(fragInputs.texCoord1.xy, 0.0f, 0.0f);
+
+        //-------------------------------------------------------------------------------------
+        // Local Pixel Shader Code
+        //-------------------------------------------------------------------------------------
+${LocalPixelShader}
+        //-------------------------------------------------------------------------------------
+        // End Local Pixel Shader Code
+        //-------------------------------------------------------------------------------------
+
+        SurfaceInputs surfaceInput;
+        //-------------------------------------------------------------------------------------
+        // Surface Inputs Population Code
+        //-------------------------------------------------------------------------------------
+${SurfaceInputs}
+        //-------------------------------------------------------------------------------------
+        // End Surface Inputs Population Code
+        //-------------------------------------------------------------------------------------
+
+        SurfaceDescription surf = PopulateSurfaceData(surfaceInput);
+
+        // SurfaceOutputRemap
+        //      float3 Color = 0;
+        //      float Alpha = 0;
+        //      {SurfaceOutputRemap}
+        // End SurfaceOutputRemap
+
+        // tangent-space normal
+        float3 normalTS =                   surf.Normal;
+
+        surfaceData.baseColor =				surf.Albedo;
+		surfaceData.perceptualSmoothness =  surf.Smoothness;
+		surfaceData.ambientOcclusion =      1.0f;
+		surfaceData.metallic =				surf.Metallic;
+		surfaceData.subsurfaceRadius =      0.0f;
+		surfaceData.thickness =             0.0f;
+		surfaceData.subsurfaceProfile =     0;
+
+#ifdef _MATID_SSS
+        surfaceData.materialId = MATERIALID_LIT_SSS;
+#else // Default
+        surfaceData.materialId = MATERIALID_LIT_STANDARD;
+#endif
+
+        // Init other parameters
+        surfaceData.anisotropy = 0;
+        surfaceData.specularColor = float3(0.0, 0.0, 0.0);
+        surfaceData.coatNormalWS = float3(0.0, 0.0, 0.0);
+        surfaceData.coatCoverage = 0.0f;
+        surfaceData.coatIOR = 0.5;
+
+        // Transparency parameters
+        // Use thickness from SSS
+        surfaceData.ior = 1.0;
+        surfaceData.transmittanceColor = float3(1.0, 1.0, 1.0);
+        surfaceData.atDistance = 1000000.0;
+        surfaceData.transmittanceMask = 0.0;
+
+        // compute world space normal
+        GetNormalWS(fragInputs, V, normalTS, surfaceData.normalWS);
+
+        // By default we use the ambient occlusion with Tri-ace trick (apply outside) for specular occlusion.
+        // If user provide bent normal then we process a better term
+#if defined(_BENTNORMALMAP) && defined(_ENABLESPECULAROCCLUSION)
+        // If we have bent normal and ambient occlusion, process a specular occlusion
+        surfaceData.specularOcclusion = GetSpecularOcclusionFromBentAO(V, bentNormalWS, surfaceData);
+#elif defined(_MASKMAP)
+        surfaceData.specularOcclusion = GetSpecularOcclusionFromAmbientOcclusion(NdotV, surfaceData.ambientOcclusion, PerceptualSmoothnessToRoughness(surfaceData.perceptualSmoothness));
+#else
+        surfaceData.specularOcclusion = 1.0;
+#endif
+
+        // This is use with anisotropic material
+        surfaceData.tangentWS = Orthonormalize(surfaceData.tangentWS, surfaceData.normalWS);
+
+    #ifdef _ALPHATEST_ON
+        DoAlphaTest(surf.Alpha, surf.AlphaClipThreshold);
+    #endif
+
+        // Builtin Data
+//            // Caution: surfaceData must be fully initialize before calling GetBuiltinData
+//            GetBuiltinData(fragInputs, surfaceData, surf.Alpha, bentNormalWS, depthOffset, 1.0f, surf.Emission, builtinData);
+
+        builtinData.opacity =                   surf.Alpha;
+        builtinData.bakeDiffuseLighting =       float3(0.0, 0.0, 0.0);
+        builtinData.emissiveIntensity =         1.0f;
+        builtinData.emissiveColor =             surf.Emission;
+        builtinData.velocity =                  float2(0.0, 0.0);
+        builtinData.shadowMask0 =               0.0;
+        builtinData.shadowMask1 =               0.0;
+        builtinData.shadowMask2 =               0.0;
+        builtinData.shadowMask3 =               0.0;
+        builtinData.distortion =                float2(0.0, 0.0);
+        builtinData.distortionBlur =            0.0;
+        builtinData.depthOffset =               0.0;
+    }
+
+    //-------------------------------------------------------------------------------------
+    // Includes
+    //-------------------------------------------------------------------------------------
+${Includes}
+    //-------------------------------------------------------------------------------------
+    // End Includes
+    //-------------------------------------------------------------------------------------
+
+    ENDHLSL
+}
