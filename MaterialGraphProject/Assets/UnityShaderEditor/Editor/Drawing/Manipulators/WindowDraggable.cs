@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEditor.Experimental.UIElements;
+#if !UNITY_2018_2_OR_NEWER
+using GeometryChangedEvent=UnityEngine.Experimental.UIElements.PostLayoutEvent;
+#endif
 
 namespace UnityEditor.ShaderGraph.Drawing
 {
@@ -33,7 +36,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             target.RegisterCallback(new EventCallback<MouseDownEvent>(OnMouseDown), Capture.NoCapture);
             target.RegisterCallback(new EventCallback<MouseMoveEvent>(OnMouseMove), Capture.NoCapture);
             target.RegisterCallback(new EventCallback<MouseUpEvent>(OnMouseUp), Capture.NoCapture);
-            target.RegisterCallback<PostLayoutEvent>(InitialLayoutSetup);
+            target.RegisterCallback<GeometryChangedEvent>(InitialLayoutSetup);
         }
 
         protected override void UnregisterCallbacksFromTarget()
@@ -92,16 +95,16 @@ namespace UnityEditor.ShaderGraph.Drawing
             m_DockTop = windowCenter.y < .5f;
         }
 
-        void InitialLayoutSetup(PostLayoutEvent postLayoutEvent)
+        void InitialLayoutSetup(GeometryChangedEvent postLayoutEvent)
         {
             m_PreviousParentRect = target.parent.layout;
-            target.UnregisterCallback<PostLayoutEvent>(InitialLayoutSetup);
-            target.RegisterCallback<PostLayoutEvent>(OnPostLayout);
+            target.UnregisterCallback<GeometryChangedEvent>(InitialLayoutSetup);
+            target.RegisterCallback<GeometryChangedEvent>(OnPostLayout);
 
             RefreshDocking();
         }
 
-        void OnPostLayout(PostLayoutEvent postLayoutEvent)
+        void OnPostLayout(GeometryChangedEvent postLayoutEvent)
         {
             Rect windowRect = target.layout;
 
