@@ -16,12 +16,22 @@ namespace UnityEditor.ShaderGraph.Drawing
         protected override void RegisterCallbacksOnTarget()
         {
             m_GraphView = target as MaterialGraphView;
+#if UNITY_2018_2_OR_NEWER
+            target.RegisterCallback<DragUpdatedEvent>(OnDragEvent);
+            target.RegisterCallback<DragPerformEvent>(OnDragEvent);
+#else
             target.RegisterCallback<IMGUIEvent>(OnIMGUIEvent);
+#endif
         }
 
         protected override void UnregisterCallbacksFromTarget()
         {
+#if UNITY_2018_2_OR_NEWER
+            target.UnregisterCallback<DragUpdatedEvent>(OnDragEvent);
+            target.UnregisterCallback<DragPerformEvent>(OnDragEvent);
+#else
             target.UnregisterCallback<IMGUIEvent>(OnIMGUIEvent);
+#endif
         }
 
         bool ValidateObject(Object obj)
@@ -88,9 +98,17 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
         }
 
+#if UNITY_2018_2_OR_NEWER
+        void OnDragEvent(EventBase evt)
+#else
         void OnIMGUIEvent(IMGUIEvent evt)
+#endif
         {
+#if UNITY_2018_2_OR_NEWER
+            if (evt is DragUpdatedEvent || evt is DragPerformEvent)
+#else
             if (evt.imguiEvent.type == EventType.DragUpdated || evt.imguiEvent.type == EventType.DragPerform)
+#endif
             {
                 var currentTarget = evt.currentTarget as VisualElement;
                 if (currentTarget == null)
@@ -110,7 +128,11 @@ namespace UnityEditor.ShaderGraph.Drawing
 
 //                Debug.LogFormat("{0}: {1}", draggedObject.GetType().Name, draggedObject.name);
                 DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
+#if UNITY_2018_2_OR_NEWER
+                if (evt is DragPerformEvent)
+#else
                 if (evt.imguiEvent.type == EventType.DragPerform)
+#endif
                 {
                     var nodePosition = m_GraphView.contentViewContainer.transform.matrix.inverse.MultiplyPoint3x4(m_GraphView.panel.visualTree.ChangeCoordinatesTo(m_GraphView, Event.current.mousePosition));
                     CreateNode(draggedObject, nodePosition);
