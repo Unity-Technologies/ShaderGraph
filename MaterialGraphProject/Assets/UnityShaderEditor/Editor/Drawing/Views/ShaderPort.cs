@@ -8,7 +8,11 @@ namespace UnityEditor.ShaderGraph.Drawing
     sealed class ShaderPort : Port
     {
         ShaderPort(Orientation portOrientation, Direction portDirection, Type type)
-            : base(portOrientation, portDirection, type) { }
+            : base(portOrientation, portDirection,
+#if UNITY_2018_2_OR_NEWER
+                Capacity.Multi,
+#endif
+                type) { }
 
         public static Port Create(Orientation orientation, Direction direction, Type type, IEdgeConnectorListener connectorListener)
         {

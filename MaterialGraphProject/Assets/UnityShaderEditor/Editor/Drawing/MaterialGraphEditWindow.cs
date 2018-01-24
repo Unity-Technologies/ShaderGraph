@@ -13,6 +13,9 @@ using UnityEditor.Graphing;
 using UnityEditor.ShaderGraph;
 using Object = UnityEngine.Object;
 using Edge = UnityEditor.Experimental.UIElements.GraphView.Edge;
+#if !UNITY_2018_2_OR_NEWER
+using GeometryChangedEvent=UnityEngine.Experimental.UIElements.PostLayoutEvent;
+#endif
 
 namespace UnityEditor.ShaderGraph.Drawing
 {
@@ -434,7 +437,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                 graphObject.graph.ValidateGraph();
 
                 graphEditorView = new GraphEditorView(this, m_GraphObject.graph as AbstractMaterialGraph, asset.name) { persistenceKey = selectedGuid };
-                graphEditorView.RegisterCallback<PostLayoutEvent>(OnPostLayout);
+                graphEditorView.RegisterCallback<GeometryChangedEvent>(OnPostLayout);
 
                 titleContent = new GUIContent(asset.name);
 
@@ -449,9 +452,9 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
         }
 
-        void OnPostLayout(PostLayoutEvent evt)
+        void OnPostLayout(GeometryChangedEvent evt)
         {
-            graphEditorView.UnregisterCallback<PostLayoutEvent>(OnPostLayout);
+            graphEditorView.UnregisterCallback<GeometryChangedEvent>(OnPostLayout);
             graphEditorView.graphView.FrameAll();
         }
     }

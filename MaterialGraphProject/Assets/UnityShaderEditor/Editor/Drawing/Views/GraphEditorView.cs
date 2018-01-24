@@ -8,6 +8,9 @@ using UnityEditor.Graphing;
 using UnityEditor.ShaderGraph.Drawing.Inspector;
 using Edge = UnityEditor.Experimental.UIElements.GraphView.Edge;
 using Object = UnityEngine.Object;
+#if !UNITY_2018_2_OR_NEWER
+using GeometryChangedEvent=UnityEngine.Experimental.UIElements.PostLayoutEvent;
+#endif
 
 namespace UnityEditor.ShaderGraph.Drawing
 {
@@ -76,8 +79,8 @@ namespace UnityEditor.ShaderGraph.Drawing
 
                 m_GraphInspectorView = new GraphInspectorView(assetName, previewManager, graph) { name = "inspector" };
                 m_GraphInspectorView.AddManipulator(new Draggable(OnMouseDrag, true));
-                m_GraphView.RegisterCallback<PostLayoutEvent>(OnPostLayout);
-                m_GraphInspectorView.RegisterCallback<PostLayoutEvent>(OnPostLayout);
+                m_GraphView.RegisterCallback<GeometryChangedEvent>(OnPostLayout);
+                m_GraphInspectorView.RegisterCallback<GeometryChangedEvent>(OnPostLayout);
 
                 m_GraphView.RegisterCallback<KeyDownEvent>(OnSpaceDown);
 
@@ -105,7 +108,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             Add(content);
         }
 
-        void OnPostLayout(PostLayoutEvent evt)
+        void OnPostLayout(GeometryChangedEvent evt)
         {
             const float minimumVisibility = 60f;
 
@@ -307,19 +310,19 @@ namespace UnityEditor.ShaderGraph.Drawing
                     var slot = (MaterialSlot)port.userData;
                     if (slot.slotReference.Equals(m_SearchWindowProvider.targetSlotReference))
                     {
-                        port.RegisterCallback<PostLayoutEvent>(RepositionNode);
+                        port.RegisterCallback<GeometryChangedEvent>(RepositionNode);
                         return;
                     }
                 }
             }
         }
 
-        static void RepositionNode(PostLayoutEvent evt)
+        static void RepositionNode(GeometryChangedEvent evt)
         {
             var port = evt.target as ShaderPort;
             if (port == null)
                 return;
-            port.UnregisterCallback<PostLayoutEvent>(RepositionNode);
+            port.UnregisterCallback<GeometryChangedEvent>(RepositionNode);
             var nodeView = port.node as MaterialNodeView;
             if (nodeView == null)
                 return;
