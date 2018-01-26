@@ -439,11 +439,11 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         public void Dispose()
         {
-            onUpdateAssetClick = null;
-            onConvertToSubgraphClick = null;
-            onShowInProjectClick = null;
             if (m_GraphView != null)
             {
+                onUpdateAssetClick = null;
+                onConvertToSubgraphClick = null;
+                onShowInProjectClick = null;
                 foreach (var node in m_GraphView.Children().OfType<MaterialNodeView>())
                     node.Dispose();
                 m_GraphView = null;
