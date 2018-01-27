@@ -64,6 +64,8 @@ namespace UnityEditor.ShaderGraph
             foreach (var channel in requirements.requiresMeshUVs.Distinct())
                 surfaceInputs.AddShaderChunk(string.Format("half4 {0};", channel.GetUVName()), false);
 
+			surfaceInputs.AddShaderChunk("float2 texcoord;", true);
+
             surfaceInputs.Deindent();
             surfaceInputs.AddShaderChunk("};", false);
 

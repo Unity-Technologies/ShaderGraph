@@ -71,7 +71,7 @@ namespace UnityEditor.ShaderGraph
                 activeNode.CollectShaderProperties(shaderProperties, mode);
 
             var finalShader = new ShaderGenerator();
-            finalShader.AddShaderChunk(string.Format(@"Shader ""{0}""", outputName), false);
+            finalShader.AddShaderChunk(string.Format(@"Shader ""Hidden/{0}""", outputName), false);
             finalShader.AddShaderChunk("{", false);
             finalShader.Indent();
 
@@ -89,6 +89,10 @@ namespace UnityEditor.ShaderGraph
             finalShader.AddShaderChunk("}", false);
 
             configuredTextures = shaderProperties.GetConfiguredTexutres();
+
+            if(mode == GenerationMode.ForReals)
+                PostProcessRuntime.BuildRuntime(outputName, this);
+
             return finalShader.GetShaderString(0);
         }
     }

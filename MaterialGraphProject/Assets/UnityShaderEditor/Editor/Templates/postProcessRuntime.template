@@ -1,0 +1,28 @@
+using System;
+
+namespace UnityEngine.Rendering.PostProcessing
+{
+    [Serializable]
+    [PostProcess(typeof(${Name}Renderer), PostProcessEvent.${Event}, "${Path}")]
+    public class ${Name} : PostProcessEffectSettings
+    {
+        ${Properties}
+    }
+
+    public class ${Name}Renderer : PostProcessEffectRenderer<${Name}>
+    {
+        Shader _shader;
+
+        public override void Init()
+        {
+            if (_shader == null)
+                _shader = Shader.Find("Hidden/${Path}");
+        }
+
+        public override void Render(PostProcessRenderContext context)
+        {
+            var sheet = context.propertySheets.Get(_shader);
+            context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
+        }
+    }
+}

@@ -10,7 +10,7 @@ Pass
     #include "LWRP/ShaderLibrary/Core.hlsl"
     #include "LWRP/ShaderLibrary/Lighting.hlsl"
     #include "CoreRP/ShaderLibrary/Color.hlsl"
-    #include "LWRP/ShaderLibrary/InputSurface.hlsl"
+    //#include "LWRP/ShaderLibrary/InputSurface.hlsl"
     #include "ShaderGraphLibrary/Functions.hlsl"
     //#include "PostProcessing/Shaders/StdLib.hlsl"
 
@@ -65,6 +65,7 @@ Pass
     	
         SurfaceInputs surfaceInput = (SurfaceInputs)0;
         ${SurfaceInputs}
+        surfaceInput.texcoord = IN.texcoord;
 
         SurfaceDescription surf = PopulateSurfaceData(surfaceInput);
         float4 Destination = float4(1.0, 1.0, 1.0, 1.0);
