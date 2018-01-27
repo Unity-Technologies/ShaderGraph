@@ -91,8 +91,10 @@ namespace UnityEditor.ShaderGraph
             configuredTextures = shaderProperties.GetConfiguredTexutres();
 
             if(mode == GenerationMode.ForReals)
-                PostProcessRuntime.BuildRuntime(outputName, this);
-
+            {
+                PostProcessRuntime ppRuntime = new PostProcessRuntime();
+                ppRuntime.BuildRuntime(outputName, this, shaderProperties);
+            }
             return finalShader.GetShaderString(0);
         }
     }
