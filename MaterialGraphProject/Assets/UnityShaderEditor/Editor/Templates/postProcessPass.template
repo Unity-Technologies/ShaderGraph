@@ -1,0 +1,76 @@
+Pass
+{
+    HLSLPROGRAM
+    // Required to compile gles 2.0 with standard srp library
+    #pragma prefer_hlslcc gles
+    #pragma vertex vert
+    #pragma fragment frag
+    #pragma multi_compile _ UNITY_SINGLE_PASS_STEREO STEREO_INSTANCING_ENABLE STEREO_MULTIVIEW_ENABLE
+
+    #include "LWRP/ShaderLibrary/Core.hlsl"
+    #include "LWRP/ShaderLibrary/Lighting.hlsl"
+    #include "CoreRP/ShaderLibrary/Color.hlsl"
+    #include "LWRP/ShaderLibrary/InputSurface.hlsl"
+    #include "ShaderGraphLibrary/Functions.hlsl"
+    //#include "PostProcessing/Shaders/StdLib.hlsl"
+
+    ${Defines}
+
+    ${Graph}
+
+    // TODO - Get this from StdLib.hlsl
+
+    float2 TransformTriangleVertexToUV(float2 vertex)
+    {
+        float2 uv = (vertex + 1.0) * 0.5;
+        return uv;
+    }
+
+    float _RenderViewportScaleFactor;
+
+    float2 TransformStereoScreenSpaceTex(float2 uv, float w)
+    {
+        return uv * _RenderViewportScaleFactor;
+    }
+
+    // End
+
+    struct GraphVertexOutput
+    {
+        float4 vertex : SV_POSITION;
+        float2 texcoord : TEXCOORD0;
+        float2 texcoordStereo : TEXCOORD1;
+        ${Interpolators}
+    };
+
+    GraphVertexOutput vert (GraphVertexInput v)
+	{
+        v = PopulateVertexData(v);
+        GraphVertexOutput o = (GraphVertexOutput)0;
+        o.vertex = float4(v.vertex.xy, 0.0, 1.0);
+        o.texcoord = TransformTriangleVertexToUV(v.vertex.xy);
+
+    #if UNITY_UV_STARTS_AT_TOP
+        o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
+    #endif
+
+        o.texcoordStereo = TransformStereoScreenSpaceTex(o.texcoord, 1.0);
+        ${VertexShader}
+        return o;
+	}
+
+    half4 frag (GraphVertexOutput IN) : SV_Target
+    {
+    	${LocalPixelShader}
+    	
+        SurfaceInputs surfaceInput = (SurfaceInputs)0;
+        ${SurfaceInputs}
+
+        SurfaceDescription surf = PopulateSurfaceData(surfaceInput);
+        float4 Destination = float4(1.0, 1.0, 1.0, 1.0);
+		${SurfaceOutputRemap}
+
+    	return Destination;
+    }
+    ENDHLSL
+}
