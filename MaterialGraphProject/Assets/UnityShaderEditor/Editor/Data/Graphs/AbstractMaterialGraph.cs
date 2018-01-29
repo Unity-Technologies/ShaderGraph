@@ -196,7 +196,6 @@ namespace UnityEditor.ShaderGraph
             var materialNode = (AbstractMaterialNode)node;
             if (!materialNode.canDeleteNode)
                 return;
-
             m_Nodes[materialNode.tempId.index] = null;
             m_FreeNodeTempIds.Push(materialNode.tempId);
             m_NodeDictionary.Remove(materialNode.guid);

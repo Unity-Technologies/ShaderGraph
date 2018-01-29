@@ -18,9 +18,11 @@ namespace UnityEditor.ShaderGraph
     [Title("Master", "Post Process")]
     public class PostProcessMasterNode : MasterNode
     {
-        public const string ColorSlotName = "Destination";
+        public const string DestinationSlotName = "Destination";
+        public const string UserDataSlotName = "User Data";
 
-        public const int ColorSlotId = 0;
+        public const int DestinationSlotId = 0;
+        public const int UserDataSlotId = 1;
 
         [SerializeField]
         private PostProcessEvent m_Event = PostProcessEvent.AfterStack;
@@ -52,8 +54,9 @@ namespace UnityEditor.ShaderGraph
         public sealed override void UpdateNodeAfterDeserialization()
         {
             name = "Post Process Master";
-            AddSlot(new ColorRGBAMaterialSlot(ColorSlotId, ColorSlotName, ColorSlotName, SlotType.Input, Color.white, ShaderStage.Fragment));
-            RemoveSlotsNameNotMatching( new[] { ColorSlotId }, true);
+            AddSlot(new ColorRGBAMaterialSlot(DestinationSlotId, DestinationSlotName, DestinationSlotName, SlotType.Input, Color.white, ShaderStage.Fragment));
+            AddSlot(new Vector4MaterialSlot(UserDataSlotId, UserDataSlotName, UserDataSlotName, SlotType.Input, Vector4.zero, ShaderStage.Fragment));
+            RemoveSlotsNameNotMatching( new[] { DestinationSlotId, UserDataSlotId }, true);
         }
 
         public override string GetShader(GenerationMode mode, string outputName, out List<PropertyCollector.TextureInfo> configuredTextures)

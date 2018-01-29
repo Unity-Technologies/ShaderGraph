@@ -9,10 +9,12 @@ namespace UnityEditor.ShaderGraph
     public class PostProcessInputsNode : AbstractMaterialNode, IGenerateProperties, IGeneratesBodyCode, IMayRequireMeshUV
     {
         const string kUVSlotName = "UV";
-        const string kOutputSlotName = "Source";
+        const string kSourceSlotName = "Source";
+        const string kUserDataName = "User Data";
 
         public const int UVSlotId = 0;
-        public const int OutputSlotId = 1;
+        public const int SourceSlotId = 1;
+        public const int UserDataSlotId = 2;
 
         public PostProcessInputsNode()
         {
@@ -28,8 +30,9 @@ namespace UnityEditor.ShaderGraph
         public override void UpdateNodeAfterDeserialization()
         {
             AddSlot(new UVMaterialSlot(UVSlotId, kUVSlotName, kUVSlotName, UVChannel.UV0));
-            AddSlot(new Vector4MaterialSlot(OutputSlotId, kOutputSlotName, kOutputSlotName, SlotType.Output, Vector4.zero));
-            RemoveSlotsNameNotMatching(new[] { UVSlotId, OutputSlotId });
+            AddSlot(new Vector4MaterialSlot(SourceSlotId, kSourceSlotName, kSourceSlotName, SlotType.Output, Vector4.zero));
+            AddSlot(new Vector4MaterialSlot(UserDataSlotId, kUserDataName, kUserDataName, SlotType.Output, Vector4.zero));
+            RemoveSlotsNameNotMatching(new[] { UVSlotId, SourceSlotId, UserDataSlotId });
         }
 
         public override void CollectPreviewMaterialProperties(List<PreviewProperty> properties)
@@ -39,10 +42,22 @@ namespace UnityEditor.ShaderGraph
                 name = "_MainTex",
                 vector4Value = new Vector4(1, 1, 1, 1)
             });
+
+            properties.Add(new PreviewProperty(PropertyType.Vector4)
+            {
+                name = "_GraphUserData",
+                vector4Value = new Vector4(0, 0, 0, 0)
+            });
         }
 
         public override void CollectShaderProperties(PropertyCollector properties, GenerationMode generationMode)
         {
+            properties.AddShaderProperty(new Vector4ShaderProperty
+            {
+                overrideReferenceName = "_GraphUserData",
+                generatePropertyBlock = false
+            });
+
             properties.AddShaderProperty(new TextureShaderProperty
             {
                 overrideReferenceName = "_MainTex",
@@ -52,14 +67,15 @@ namespace UnityEditor.ShaderGraph
         }
 
         public void GenerateNodeCode(ShaderGenerator visitor, GenerationMode generationMode)
-        {
-			string texcoord = generationMode == GenerationMode.ForReals ? "IN.texcoord" : "float2(0,0)";            
-			var result = string.Format("{0}4 {1} = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, {2});"
+        {          
+			visitor.AddShaderChunk(string.Format("{0}4 {1} = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, {2});"
                 , precision
-				, GetVariableNameForSlot(OutputSlotId)
-                , texcoord); //GetSlotValue(UVSlotId, generationMode));
-
-            visitor.AddShaderChunk(result, true);
+				, GetVariableNameForSlot(SourceSlotId)
+                , GetSlotValue(UVSlotId, generationMode)), true);
+                
+            visitor.AddShaderChunk(string.Format("{0}4 {1} = _GraphUserData;"
+                , precision
+				, GetVariableNameForSlot(UserDataSlotId)), true);
         }
 
         public bool RequiresMeshUV(UVChannel channel)

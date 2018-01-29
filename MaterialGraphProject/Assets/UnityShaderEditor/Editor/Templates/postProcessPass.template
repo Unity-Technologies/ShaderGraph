@@ -38,8 +38,8 @@ Pass
     struct GraphVertexOutput
     {
         float4 vertex : SV_POSITION;
-        float2 texcoord : TEXCOORD0;
-        float2 texcoordStereo : TEXCOORD1;
+        //float2 texcoord : TEXCOORD0;
+        //float2 texcoordStereo : TEXCOORD1;
         ${Interpolators}
     };
 
@@ -48,13 +48,13 @@ Pass
         v = PopulateVertexData(v);
         GraphVertexOutput o = (GraphVertexOutput)0;
         o.vertex = float4(v.vertex.xy, 0.0, 1.0);
-        o.texcoord = TransformTriangleVertexToUV(v.vertex.xy);
+        float4 texcoord = float4(TransformTriangleVertexToUV(v.vertex.xy), 0, 0);
 
     #if UNITY_UV_STARTS_AT_TOP
-        o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
+        texcoord.xy = texcoord.xy * float2(1.0, -1.0) + float2(0.0, 1.0);
     #endif
 
-        o.texcoordStereo = TransformStereoScreenSpaceTex(o.texcoord, 1.0);
+        //o.texcoordStereo = TransformStereoScreenSpaceTex(o.texcoord, 1.0);
         ${VertexShader}
         return o;
 	}
@@ -65,7 +65,6 @@ Pass
     	
         SurfaceInputs surfaceInput = (SurfaceInputs)0;
         ${SurfaceInputs}
-        surfaceInput.texcoord = IN.texcoord;
 
         SurfaceDescription surf = PopulateSurfaceData(surfaceInput);
         float4 Destination = float4(1.0, 1.0, 1.0, 1.0);

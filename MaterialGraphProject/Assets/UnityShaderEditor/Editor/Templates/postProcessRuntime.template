@@ -22,8 +22,10 @@ namespace UnityEngine.Rendering.PostProcessing
         public override void Render(PostProcessRenderContext context)
         {
             var sheet = context.propertySheets.Get(_shader);
+            ${GetUserData}
             ${SetMaterialProperties}
             context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
+            ${SetUserData}
         }
     }
 }
