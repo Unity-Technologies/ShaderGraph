@@ -132,6 +132,9 @@ namespace UnityEditor.ShaderGraph
 
             ShaderGenerator defines = new ShaderGenerator();
 
+            if (mode != GenerationMode.ForReals)
+                defines.AddShaderChunk("#define UNITY_SHADERGRAPH_PREVIEW", true);
+
             var templateLocation = ShaderGenerator.GetTemplatePath(template);
 
             foreach (var slot in usedSlots)

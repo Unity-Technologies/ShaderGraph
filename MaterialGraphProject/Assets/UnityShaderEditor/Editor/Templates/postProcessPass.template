@@ -47,8 +47,13 @@ Pass
 	{
         v = PopulateVertexData(v);
         GraphVertexOutput o = (GraphVertexOutput)0;
+    #ifdef UNITY_SHADERGRAPH_PREVIEW
+        o.vertex = TransformObjectToHClip(float4(v.vertex.xy, 0.0, 1.0));
+        float4 texcoord = float4(v.vertex.xy + 0.5, 0, 0);
+    #else
         o.vertex = float4(v.vertex.xy, 0.0, 1.0);
         float4 texcoord = float4(TransformTriangleVertexToUV(v.vertex.xy), 0, 0);
+    #endif
 
     #if UNITY_UV_STARTS_AT_TOP
         texcoord.xy = texcoord.xy * float2(1.0, -1.0) + float2(0.0, 1.0);
