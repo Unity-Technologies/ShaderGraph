@@ -16,6 +16,8 @@ namespace UnityEditor.ShaderGraph
         public const int SourceSlotId = 1;
         public const int UserDataSlotId = 2;
 
+        private Texture2D m_TestCardTexture;
+
         public PostProcessInputsNode()
         {
             name = "Post Process Inputs";
@@ -37,10 +39,13 @@ namespace UnityEditor.ShaderGraph
 
         public override void CollectPreviewMaterialProperties(List<PreviewProperty> properties)
         {
-            properties.Add(new PreviewProperty(PropertyType.Vector4)
+            if (m_TestCardTexture == null)
+                m_TestCardTexture = Resources.Load<Texture2D>("PostProcessTestCard");
+
+            properties.Add(new PreviewProperty(PropertyType.Texture)
             {
                 name = "_MainTex",
-                vector4Value = new Vector4(1, 1, 1, 1)
+                textureValue = m_TestCardTexture
             });
 
             properties.Add(new PreviewProperty(PropertyType.Vector4)
