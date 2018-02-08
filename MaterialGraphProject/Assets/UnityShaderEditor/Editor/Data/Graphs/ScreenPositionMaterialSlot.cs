@@ -11,8 +11,8 @@ namespace UnityEditor.ShaderGraph
         {}
 
         public ScreenPositionMaterialSlot(int slotId, string displayName, string shaderOutputName,
-                                          ShaderStage shaderStage = ShaderStage.Dynamic, bool hidden = false)
-            : base(slotId, displayName, shaderOutputName, SlotType.Input, Vector3.zero, shaderStage, hidden)
+                                          ShaderStageCapability stageCapability = ShaderStageCapability.All, bool hidden = false)
+            : base(slotId, displayName, shaderOutputName, SlotType.Input, Vector3.zero, stageCapability, hidden)
         {}
 
         public override string GetDefaultValue(GenerationMode generationMode)

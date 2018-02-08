@@ -20,7 +20,7 @@ namespace UnityEditor.ShaderGraph
             {
                 if (char.IsUpper(text[i]))
                     if ((text[i - 1] != ' ' && !char.IsUpper(text[i - 1])) ||
-                        (preserveAcronyms && char.IsUpper(text[i - 1]) && 
+                        (preserveAcronyms && char.IsUpper(text[i - 1]) &&
                         i < text.Length - 1 && !char.IsUpper(text[i + 1])))
                         newText.Append(' ');
                 newText.Append(text[i]);
@@ -299,12 +299,65 @@ namespace UnityEditor.ShaderGraph
             surfaceDescriptionFunction.AddShaderChunk("}", false);
         }
 
+        const string k_VertexDescriptionStructName = "VertexDescription";
+
+        internal static void GenerateVertexDescriptionStruct(ShaderStringBuilder builder, List<MaterialSlot> slots)
+        {
+            builder.AppendLine("struct {0}", k_VertexDescriptionStructName);
+            using (builder.BlockSemicolonScope())
+            {
+                foreach (var slot in slots)
+                    builder.AppendLine("{0} {1};", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, slot.concreteValueType), NodeUtils.GetHLSLSafeName(slot.shaderOutputName));
+            }
+        }
+
+        internal static void GenerateVertexDescriptionFunction(
+            ShaderStringBuilder builder,
+            FunctionRegistry functionRegistry,
+            PropertyCollector shaderProperties,
+            GenerationMode generationMode,
+            List<AbstractMaterialNode> nodes,
+            List<MaterialSlot> slots)
+        {
+            builder.AppendLine("{0} PopulateVertexData(VertexDescriptionInputs IN)", k_VertexDescriptionStructName);
+            using (builder.BlockScope())
+            {
+                builder.AppendLine("{0} description = ({0})0;", k_VertexDescriptionStructName);
+                foreach (var node in nodes)
+                {
+                    var generatesFunction = node as IGeneratesFunction;
+                    if (generatesFunction != null)
+                    {
+                        functionRegistry.builder.currentNode = node;
+                        generatesFunction.GenerateNodeFunction(functionRegistry, generationMode);
+                    }
+                    var generatesBodyCode = node as IGeneratesBodyCode;
+                    if (generatesBodyCode != null)
+                    {
+                        var generator = new ShaderGenerator();
+                        generatesBodyCode.GenerateNodeCode(generator, generationMode);
+                        builder.AppendLines(generator.GetShaderString(0));
+                    }
+                    node.CollectShaderProperties(shaderProperties, generationMode);
+                }
+                foreach (var slot in slots)
+                {
+                    var isSlotConnected = slot.owner.owner.GetEdges(slot.slotReference).Any();
+                    var slotName = NodeUtils.GetHLSLSafeName(slot.shaderOutputName);
+                    var slotValue = isSlotConnected ? ((AbstractMaterialNode)slot.owner).GetSlotValue(slot.id, generationMode) : slot.GetDefaultValue(generationMode);
+                    builder.AppendLine("description.{0} = {1};", slotName, slotValue);
+
+                }
+                builder.AppendLine("return description;");
+            }
+        }
+
         public static GenerationResults GetPreviewShader(this AbstractMaterialGraph graph, AbstractMaterialNode node)
         {
             return graph.GetShader(node, GenerationMode.Preview, String.Format("hidden/preview/{0}", node.GetVariableNameForNode()));
         }
 
-        public static GenerationResults GetUberPreviewShader(this AbstractMaterialGraph graph)
+        public static GenerationResults GetColorPreviewShader(this AbstractMaterialGraph graph)
         {
             return graph.GetShader(null, GenerationMode.Preview, "hidden/preview");
         }

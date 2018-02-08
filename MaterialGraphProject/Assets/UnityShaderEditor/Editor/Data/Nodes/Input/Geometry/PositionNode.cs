@@ -10,15 +10,14 @@ namespace UnityEditor.ShaderGraph
         private const int kOutputSlotId = 0;
         public const string kOutputSlotName = "Out";
 
-
         public PositionNode()
         {
-            name = "Position";
             UpdateNodeAfterDeserialization();
         }
 
         public sealed override void UpdateNodeAfterDeserialization()
         {
+            name = "Position";
             AddSlot(new Vector3MaterialSlot(
                     kOutputSlotId,
                     kOutputSlotName,

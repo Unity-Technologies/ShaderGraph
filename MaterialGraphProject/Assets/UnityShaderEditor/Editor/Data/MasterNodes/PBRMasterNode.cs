@@ -16,7 +16,7 @@ namespace UnityEditor.ShaderGraph
 
     [Serializable]
     [Title("Master", "PBR")]
-    public class PBRMasterNode : MasterNode
+    public class PBRMasterNode : MasterNode, IMayRequirePosition
     {
         public const string AlbedoSlotName = "Albedo";
         public const string NormalSlotName = "Normal";
@@ -27,7 +27,7 @@ namespace UnityEditor.ShaderGraph
         public const string OcclusionSlotName = "Occlusion";
         public const string AlphaSlotName = "Alpha";
         public const string AlphaClipThresholdSlotName = "AlphaClipThreshold";
-        public const string VertexOffsetName = "VertexPosition";
+        public const string PositionName = "Position";
 
         public const int AlbedoSlotId = 0;
         public const int NormalSlotId = 1;
@@ -38,6 +38,7 @@ namespace UnityEditor.ShaderGraph
         public const int OcclusionSlotId = 6;
         public const int AlphaSlotId = 7;
         public const int AlphaThresholdSlotId = 8;
+        public const int PositionSlotId = 9;
 
         public enum Model
         {
@@ -88,23 +89,25 @@ namespace UnityEditor.ShaderGraph
         public sealed override void UpdateNodeAfterDeserialization()
         {
             name = "PBR Master";
-            AddSlot(new ColorRGBMaterialSlot(AlbedoSlotId, AlbedoSlotName, AlbedoSlotName, SlotType.Input, Color.grey, ShaderStage.Fragment));
-            AddSlot(new Vector3MaterialSlot(NormalSlotId, NormalSlotName, NormalSlotName, SlotType.Input, new Vector3(0, 0, 1), ShaderStage.Fragment));
-            AddSlot(new ColorRGBMaterialSlot(EmissionSlotId, EmissionSlotName, EmissionSlotName, SlotType.Input, Color.black, ShaderStage.Fragment));
+            AddSlot(new PositionMaterialSlot(PositionSlotId, PositionName, PositionName, CoordinateSpace.Object, ShaderStageCapability.Vertex));
+            AddSlot(new ColorRGBMaterialSlot(AlbedoSlotId, AlbedoSlotName, AlbedoSlotName, SlotType.Input, Color.grey, ShaderStageCapability.Fragment));
+            AddSlot(new Vector3MaterialSlot(NormalSlotId, NormalSlotName, NormalSlotName, SlotType.Input, new Vector3(0, 0, 1), ShaderStageCapability.Fragment));
+            AddSlot(new ColorRGBMaterialSlot(EmissionSlotId, EmissionSlotName, EmissionSlotName, SlotType.Input, Color.black, ShaderStageCapability.Fragment));
             if (model == Model.Metallic)
-                AddSlot(new Vector1MaterialSlot(MetallicSlotId, MetallicSlotName, MetallicSlotName, SlotType.Input, 0, ShaderStage.Fragment));
+                AddSlot(new Vector1MaterialSlot(MetallicSlotId, MetallicSlotName, MetallicSlotName, SlotType.Input, 0, ShaderStageCapability.Fragment));
             else
-                AddSlot(new ColorRGBMaterialSlot(SpecularSlotId, SpecularSlotName, SpecularSlotName, SlotType.Input, Color.grey, ShaderStage.Fragment));
-            AddSlot(new Vector1MaterialSlot(SmoothnessSlotId, SmoothnessSlotName, SmoothnessSlotName, SlotType.Input, 0.5f, ShaderStage.Fragment));
-            AddSlot(new Vector1MaterialSlot(OcclusionSlotId, OcclusionSlotName, OcclusionSlotName, SlotType.Input, 1f, ShaderStage.Fragment));
-            AddSlot(new Vector1MaterialSlot(AlphaSlotId, AlphaSlotName, AlphaSlotName, SlotType.Input, 1f, ShaderStage.Fragment));
-            AddSlot(new Vector1MaterialSlot(AlphaThresholdSlotId, AlphaClipThresholdSlotName, AlphaClipThresholdSlotName, SlotType.Input, 0f, ShaderStage.Fragment));
+                AddSlot(new ColorRGBMaterialSlot(SpecularSlotId, SpecularSlotName, SpecularSlotName, SlotType.Input, Color.grey, ShaderStageCapability.Fragment));
+            AddSlot(new Vector1MaterialSlot(SmoothnessSlotId, SmoothnessSlotName, SmoothnessSlotName, SlotType.Input, 0.5f, ShaderStageCapability.Fragment));
+            AddSlot(new Vector1MaterialSlot(OcclusionSlotId, OcclusionSlotName, OcclusionSlotName, SlotType.Input, 1f, ShaderStageCapability.Fragment));
+            AddSlot(new Vector1MaterialSlot(AlphaSlotId, AlphaSlotName, AlphaSlotName, SlotType.Input, 1f, ShaderStageCapability.Fragment));
+            AddSlot(new Vector1MaterialSlot(AlphaThresholdSlotId, AlphaClipThresholdSlotName, AlphaClipThresholdSlotName, SlotType.Input, 0f, ShaderStageCapability.Fragment));
 
             // clear out slot names that do not match the slots
             // we support
             RemoveSlotsNameNotMatching(
                 new[]
             {
+                PositionSlotId,
                 AlbedoSlotId,
                 NormalSlotId,
                 EmissionSlotId,
@@ -151,6 +154,16 @@ namespace UnityEditor.ShaderGraph
 
             configuredTextures = shaderProperties.GetConfiguredTexutres();
             return finalShader.GetShaderString(0);
+        }
+
+        public NeededCoordinateSpace RequiresPosition()
+        {
+            s_TempSlots.Clear();
+            GetInputSlots(s_TempSlots);
+            var binding = NeededCoordinateSpace.None;
+            foreach (var slot in s_TempSlots)
+                binding |= slot.RequiresPosition();
+            return binding;
         }
     }
 }

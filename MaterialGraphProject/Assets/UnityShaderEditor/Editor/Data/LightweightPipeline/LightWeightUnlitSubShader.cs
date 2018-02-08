@@ -26,9 +26,9 @@ namespace UnityEditor.ShaderGraph
         }
 
         private static string GetShaderPassFromTemplate(
-            string template, 
-            UnlitMasterNode masterNode, 
-            Pass pass, 
+            string template,
+            UnlitMasterNode masterNode,
+            Pass pass,
             GenerationMode mode,
             SurfaceMaterialOptions materialOptions)
         {
@@ -117,14 +117,15 @@ namespace UnityEditor.ShaderGraph
             var cullingVisitor = new ShaderGenerator();
             var zTestVisitor = new ShaderGenerator();
             var zWriteVisitor = new ShaderGenerator();
-            
+
             materialOptions.GetBlend(blendingVisitor);
             materialOptions.GetCull(cullingVisitor);
             materialOptions.GetDepthTest(zTestVisitor);
             materialOptions.GetDepthWrite(zWriteVisitor);
 
             var interpolators = new ShaderGenerator();
-            var localVertexShader = new ShaderGenerator();
+            var localVertexShader = new ShaderStringBuilder(3);
+            var localVertexShaderSG = new ShaderGenerator();
             var localPixelShader = new ShaderGenerator();
             var localSurfaceInputs = new ShaderGenerator();
             var surfaceOutputRemap = new ShaderGenerator();
@@ -136,11 +137,14 @@ namespace UnityEditor.ShaderGraph
                 10,
                 interpolators,
                 localVertexShader,
+                localVertexShaderSG,
                 localPixelShader,
                 localSurfaceInputs,
                 requirements,
                 reqs,
+                ShaderGraphRequirements.none,
                 CoordinateSpace.World);
+            localVertexShader.AppendLines(localVertexShaderSG.GetShaderString(0));
 
             ShaderGenerator defines = new ShaderGenerator();
 
@@ -163,7 +167,7 @@ namespace UnityEditor.ShaderGraph
             var resultPass = subShaderTemplate.Replace("${Defines}", defines.GetShaderString(3));
             resultPass = resultPass.Replace("${Graph}", graph.GetShaderString(3));
             resultPass = resultPass.Replace("${Interpolators}", interpolators.GetShaderString(3));
-            resultPass = resultPass.Replace("${VertexShader}", localVertexShader.GetShaderString(3));
+            resultPass = resultPass.Replace("${VertexShader}", localVertexShader.ToString());
             resultPass = resultPass.Replace("${LocalPixelShader}", localPixelShader.GetShaderString(3));
             resultPass = resultPass.Replace("${SurfaceInputs}", localSurfaceInputs.GetShaderString(3));
             resultPass = resultPass.Replace("${SurfaceOutputRemap}", surfaceOutputRemap.GetShaderString(3));
