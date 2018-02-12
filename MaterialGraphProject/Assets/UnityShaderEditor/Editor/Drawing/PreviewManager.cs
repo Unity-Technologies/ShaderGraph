@@ -284,7 +284,8 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 var mesh = m_Graph.previewData.serializedMesh.mesh ? m_Graph.previewData.serializedMesh.mesh :  m_SceneResources.sphere;
                 var previewTransform = Matrix4x4.Rotate(m_Graph.previewData.rotation);
-                previewTransform *= Matrix4x4.Scale(Vector3.one * (Vector3.one).magnitude / mesh.bounds.size.magnitude);
+                var scale = m_Graph.previewData.scale;
+                previewTransform *= Matrix4x4.Scale(scale * Vector3.one * (Vector3.one).magnitude / mesh.bounds.size.magnitude);
                 previewTransform *= Matrix4x4.Translate(-mesh.bounds.center);
                 RenderPreview(masterRenderData, mesh, previewTransform);
             }
@@ -313,7 +314,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 PropagateNodeSet(m_DirtyShaders);
 
-                var masterNodes = new List<MasterNode>();
+                var masterNodes = new List<INode>();
                 var colorNodes = new List<INode>();
                 var wireframeNodes = new List<INode>();
                 foreach (var index in m_DirtyShaders)
@@ -321,9 +322,9 @@ namespace UnityEditor.ShaderGraph.Drawing
                     var node = m_Graph.GetNodeFromTempId(m_Identifiers[index]) as AbstractMaterialNode;
                     if (node == null)
                         continue;
-                    var masterNode = node as MasterNode;
+                    var masterNode = node as IMasterNode;
                     if (masterNode != null)
-                        masterNodes.Add(masterNode);
+                        masterNodes.Add(node);
                     else if (node.previewMode == PreviewMode.Wireframe)
                         wireframeNodes.Add(node);
                     else

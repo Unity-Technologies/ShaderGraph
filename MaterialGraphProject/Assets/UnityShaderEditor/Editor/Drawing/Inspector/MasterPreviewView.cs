@@ -21,7 +21,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
         Vector2 m_PreviewScrollPosition;
         ObjectField m_PreviewMeshPicker;
 
-        MasterNode m_MasterNode;
+        IMasterNode m_MasterNode;
         Mesh m_PreviousMesh;
 
         List<string> m_DoNotShowPrimitives = new List<string>( new string[] {PrimitiveType.Plane.ToString()});
@@ -57,12 +57,20 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
                 m_PreviewScrollPosition = new Vector2(0f, 0f);
 
                 middleContainer.Add(m_PreviewTextureView);
+
+                middleContainer.AddManipulator(new Scrollable(OnScroll));
             }
             Add(middleContainer);
         }
 
+        void OnScroll(float scrollValue)
+        {
+            float rescaleAmount = -scrollValue * .03f;
+            m_Graph.previewData.scale = Mathf.Clamp(m_Graph.previewData.scale + rescaleAmount, 0.2f, 5f);
+        }
+
         void BuildContextualMenu(ContextualMenuPopulateEvent evt)
-        { 
+        {
             foreach (var primitiveTypeName in Enum.GetNames(typeof(PrimitiveType)))
             {
                 if(m_DoNotShowPrimitives.Contains(primitiveTypeName))
@@ -73,9 +81,16 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
             evt.menu.AppendAction("Custom Mesh", e => ChangeMeshCustom(), ContextualMenu.MenuAction.AlwaysEnabled);
         }
 
-        MasterNode masterNode
+        IMasterNode masterNode
         {
-            get { return m_PreviewRenderHandle.shaderData.node as MasterNode; }
+            get { return m_PreviewRenderHandle.shaderData.node as IMasterNode; }
+        }
+
+        void DirtyMasterNode(ModificationScope scope)
+        {
+            var amn = masterNode as AbstractMaterialNode;
+            if (amn != null)
+                amn.Dirty(scope);
         }
 
         void OnPreviewChanged()
@@ -95,7 +110,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
         {
             Mesh changedMesh = mesh;
 
-            masterNode.Dirty(ModificationScope.Node);
+            DirtyMasterNode(ModificationScope.Node);
 
             if (m_Graph.previewData.serializedMesh.mesh != changedMesh)
             {
@@ -166,7 +181,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
             Quaternion previewRotation = Quaternion.Euler(m_PreviewScrollPosition.y, 0, 0) * Quaternion.Euler(0, m_PreviewScrollPosition.x, 0);
             m_Graph.previewData.rotation = previewRotation;
 
-            masterNode.Dirty(ModificationScope.Node);
+            DirtyMasterNode(ModificationScope.Node);
         }
     }
 }
