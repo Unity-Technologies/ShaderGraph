@@ -419,19 +419,30 @@ namespace UnityEditor.ShaderGraph
             NeededCoordinateSpace neededSpaces,
             InterpolatorType interpolatorType,
             ShaderGenerator surfaceInputs,
-            string toReplace = "float3 {0};")
+            string format = "float3 {0};")
+        {
+            var builder = new ShaderStringBuilder();
+            GenerateSpaceTranslationSurfaceInputs(neededSpaces, interpolatorType, builder, format);
+            surfaceInputs.AddShaderChunk(builder.ToString(), false);
+        }
+
+        public static void GenerateSpaceTranslationSurfaceInputs(
+            NeededCoordinateSpace neededSpaces,
+            InterpolatorType interpolatorType,
+            ShaderStringBuilder builder,
+            string format = "float3 {0};")
         {
             if ((neededSpaces & NeededCoordinateSpace.Object) > 0)
-                surfaceInputs.AddShaderChunk(string.Format(toReplace, CoordinateSpace.Object.ToVariableName(interpolatorType)), false);
+                builder.AppendLine(format, CoordinateSpace.Object.ToVariableName(interpolatorType));
 
             if ((neededSpaces & NeededCoordinateSpace.World) > 0)
-                surfaceInputs.AddShaderChunk(string.Format(toReplace, CoordinateSpace.World.ToVariableName(interpolatorType)), false);
+                builder.AppendLine(format, CoordinateSpace.World.ToVariableName(interpolatorType));
 
             if ((neededSpaces & NeededCoordinateSpace.View) > 0)
-                surfaceInputs.AddShaderChunk(string.Format(toReplace, CoordinateSpace.View.ToVariableName(interpolatorType)), false);
+                builder.AppendLine(format, CoordinateSpace.View.ToVariableName(interpolatorType));
 
             if ((neededSpaces & NeededCoordinateSpace.Tangent) > 0)
-                surfaceInputs.AddShaderChunk(string.Format(toReplace, CoordinateSpace.Tangent.ToVariableName(interpolatorType)), false);
+                builder.AppendLine(format, CoordinateSpace.Tangent.ToVariableName(interpolatorType));
         }
 
         public static void GenerateStandardTransforms(
