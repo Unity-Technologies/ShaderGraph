@@ -437,7 +437,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                 return;
             var shaderData = renderData.shaderData;
 
-            if (!(node is IMasterNode) && (!node.hasPreview || NodeUtils.GetEffectiveShaderStage(node.GetOutputSlots<MaterialSlot>().First(), true) == ShaderStage.Vertex))
+            if (!(node is IMasterNode) && !node.hasPreview)
             {
                 shaderData.shaderString = null;
             }
