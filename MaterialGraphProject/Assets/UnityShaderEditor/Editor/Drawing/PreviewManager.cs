@@ -365,7 +365,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                                 {
                                     continue;
                                 }
-                                message.AppendLine("{0} in {3} at line {1} (on {2})", error.message, error.line, error.platform, node != null ? string.Format("node {0} ({1})", node.name, node.guid) : "graph");
+                                message.AppendLine("Compilation error in {3} at line {1} (on {2}):\n{0}", error.message, error.line, error.platform, node != null ? string.Format("node {0} ({1})", node.name, node.guid) : "graph");
                                 message.AppendLine(error.messageDetails);
                                 message.AppendNewLine();
                             }
@@ -482,6 +482,9 @@ namespace UnityEditor.ShaderGraph.Drawing
             var message = "RecreateShader: " + node.GetVariableNameForNode() + Environment.NewLine + shaderData.shaderString;
             if (MaterialGraphAsset.ShaderHasError(shaderData.shader))
             {
+                var errors = MaterialGraphAsset.GetShaderErrors(shaderData.shader);
+                foreach (var error in errors)
+                    Debug.LogFormat("Compilation error in {3} at line {1} (on {2}):\n{0}", error.message, error.line, error.platform, "graph");
                 shaderData.hasError = true;
                 Debug.LogWarning(message);
                 ShaderUtil.ClearShaderErrors(shaderData.shader);
