@@ -191,9 +191,9 @@ namespace UnityEditor.ShaderGraph
             return results;
         }
 
-        internal static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster)
+        internal static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster, string structName = "SurfaceDescription")
         {
-            surfaceDescriptionStruct.AddShaderChunk("struct SurfaceDescription{", false);
+            surfaceDescriptionStruct.AddShaderChunk(String.Format("struct {0}{{", structName), false);
             surfaceDescriptionStruct.Indent();
             if (isMaster)
             {
@@ -226,12 +226,13 @@ namespace UnityEditor.ShaderGraph
             string functionName = "PopulateSurfaceData",
             string surfaceDescriptionName = "SurfaceDescription",
             FloatShaderProperty outputIdProperty = null,
-            IEnumerable<MaterialSlot> slots = null)
+            IEnumerable<MaterialSlot> slots = null,
+            string graphInputStructName = "SurfaceInputs")
         {
             if (graph == null)
                 return;
 
-            surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} {1}(SurfaceInputs IN) {{", surfaceDescriptionName, functionName), false);
+            surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} {1}({2} IN) {{", surfaceDescriptionName, functionName, graphInputStructName), false);
             surfaceDescriptionFunction.Indent();
             surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} surface = ({0})0;", surfaceDescriptionName), false);
 
