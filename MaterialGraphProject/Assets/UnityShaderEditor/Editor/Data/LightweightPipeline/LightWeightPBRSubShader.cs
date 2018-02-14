@@ -52,7 +52,7 @@ namespace UnityEditor.ShaderGraph
             }
         };
 
-        private static string GetShaderPassFromTemplate(string template, PBRMasterNode masterNode, Pass pass, GenerationMode mode, SurfaceMaterialOptions materialOptions)
+        static string GetShaderPassFromTemplate(string template, PBRMasterNode masterNode, Pass pass, GenerationMode mode, SurfaceMaterialOptions materialOptions)
         {
             var builder = new ShaderStringBuilder(2);
             var vertexInputs = new ShaderGenerator();
@@ -122,11 +122,6 @@ namespace UnityEditor.ShaderGraph
 
                 foreach (var channel in vertexRequirements.requiresMeshUVs.Distinct())
                     vertexDescriptionInputsStruct.AppendLine("half4 {0};", channel.GetUVName());
-            }
-
-            // Generate standard transforms for vertex description input
-            {
-
             }
 
             var modelRequiements = ShaderGraphRequirements.none;
@@ -218,18 +213,12 @@ namespace UnityEditor.ShaderGraph
             if (masterNode.IsSlotConnected(PBRMasterNode.AlphaThresholdSlotId))
                 defines.AddShaderChunk("#define _AlphaClip 1", true);
 
-            var templateLocation = ShaderGenerator.GetTemplatePath(template);
-
             foreach (var slot in usedSlots)
             {
                 surfaceOutputRemap.AddShaderChunk(string.Format("{0} = surf.{0};", slot.shaderOutputName), true);
             }
 
-            if (!File.Exists(templateLocation))
-                return string.Empty;
-
-            var subShaderTemplate = File.ReadAllText(templateLocation);
-            var resultPass = subShaderTemplate.Replace("${Defines}", defines.GetShaderString(3));
+            var resultPass = template.Replace("${Defines}", defines.GetShaderString(3));
             resultPass = resultPass.Replace("${Graph}", graph.GetShaderString(0));
             resultPass = resultPass.Replace("${Interpolators}", interpolators.GetShaderString(3));
             resultPass = resultPass.Replace("${VertexDescriptionInputs}", vertexDescriptionInputs.ToString());
@@ -243,40 +232,112 @@ namespace UnityEditor.ShaderGraph
             resultPass = resultPass.Replace("${Culling}", cullingVisitor.GetShaderString(2));
             resultPass = resultPass.Replace("${ZTest}", zTestVisitor.GetShaderString(2));
             resultPass = resultPass.Replace("${ZWrite}", zWriteVisitor.GetShaderString(2));
+
             return resultPass;
+        }
+
+        static string GetExtraPassesFromTemplate(string template, PBRMasterNode masterNode, Pass pass, GenerationMode mode)
+        {
+            // Build list of nodes going into the vertex shader and their requirements
+            var vertexNodes = ListPool<AbstractMaterialNode>.Get();
+            NodeUtils.DepthFirstCollectNodesFromNode(vertexNodes, masterNode, NodeUtils.IncludeSelf.Include, pass.VertexShaderSlots);
+            var vertexRequirements = ShaderGraphRequirements.FromNodes(vertexNodes);
+
+            // Generate input structure for vertex description function
+            var graphBuilder = new ShaderStringBuilder(1);
+            graphBuilder.AppendLine("struct VertexDescriptionInputs");
+            using (graphBuilder.BlockSemicolonScope())
+            {
+                var sg = new ShaderGenerator();
+                ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(vertexRequirements.requiresNormal, InterpolatorType.Normal, sg);
+                ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(vertexRequirements.requiresTangent, InterpolatorType.Tangent, sg);
+                ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(vertexRequirements.requiresBitangent, InterpolatorType.BiTangent, sg);
+                ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(vertexRequirements.requiresViewDir, InterpolatorType.ViewDirection, sg);
+                ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(vertexRequirements.requiresPosition, InterpolatorType.Position, sg);
+                graphBuilder.AppendLines(sg.GetShaderString(0));
+
+                if (vertexRequirements.requiresVertexColor)
+                    graphBuilder.AppendLine("float4 {0};", ShaderGeneratorNames.VertexColor);
+
+                if (vertexRequirements.requiresScreenPosition)
+                    graphBuilder.AppendLine("float4 {0};", ShaderGeneratorNames.ScreenPosition);
+
+                foreach (var channel in vertexRequirements.requiresMeshUVs.Distinct())
+                    graphBuilder.AppendLine("half4 {0};", channel.GetUVName());
+            }
+
+            // Generate input structure for vertex shader
+            var modelRequiements = ShaderGraphRequirements.none;
+            modelRequiements.requiresNormal |= NeededCoordinateSpace.Object;
+            modelRequiements.requiresPosition |= NeededCoordinateSpace.Object;
+            modelRequiements.requiresMeshUVs.Add(UVChannel.UV1);
+            GraphUtil.GenerateApplicationVertexInputs(vertexRequirements.Union(modelRequiements), graphBuilder);
+
+            var shaderProperties = new PropertyCollector();
+            var vertexSlots = pass.VertexShaderSlots.Select(masterNode.FindSlot<MaterialSlot>).ToList();
+            var vertexDescriptionBuilder = new ShaderStringBuilder();
+            var functionRegistryBuilder = new ShaderStringBuilder();
+            var functionRegistry = new FunctionRegistry(functionRegistryBuilder);
+            GraphUtil.GenerateVertexDescriptionStruct(vertexDescriptionBuilder, vertexSlots);
+            GraphUtil.GenerateVertexDescriptionFunction(vertexDescriptionBuilder, functionRegistry, shaderProperties, mode, vertexNodes, vertexSlots);
+            shaderProperties.GetPropertiesDeclaration(graphBuilder);
+            graphBuilder.Concat(functionRegistryBuilder);
+            graphBuilder.Concat(vertexDescriptionBuilder);
+            template = template.Replace("${Graph}", graphBuilder.ToString());
+
+            var vertexDescriptionInputsBuilder = new ShaderStringBuilder(1);
+            var dummyGenerator = new ShaderGenerator();
+            ShaderGenerator.GenerateStandardTransforms(
+                3,
+                10,
+                dummyGenerator,
+                vertexDescriptionInputsBuilder,
+                dummyGenerator,
+                dummyGenerator,
+                dummyGenerator,
+                ShaderGraphRequirements.none,
+                ShaderGraphRequirements.none,
+                vertexRequirements,
+                CoordinateSpace.World);
+            template = template.Replace("${VertexDescriptionInputs}", vertexDescriptionInputsBuilder.ToString());
+
+            return template;
         }
 
         public string GetSubshader(IMasterNode inMasterNode, GenerationMode mode)
         {
+            var templatePath = ShaderGenerator.GetTemplatePath("lightweightPBRForwardPass.template");
+            var extraPassesTemplatePath = ShaderGenerator.GetTemplatePath("lightweightPBRExtraPasses.template");
+            if (!File.Exists(templatePath) || !File.Exists(extraPassesTemplatePath))
+                return string.Empty;
+
+            string forwardTemplate = File.ReadAllText(templatePath);
+            string extraTemplate = File.ReadAllText(extraPassesTemplatePath);
+
             var masterNode = inMasterNode as PBRMasterNode;
-            var subShader = new ShaderGenerator();
-            subShader.AddShaderChunk("SubShader", true);
-            subShader.AddShaderChunk("{", true);
-            subShader.Indent();
-            subShader.AddShaderChunk("Tags{ \"RenderPipeline\" = \"LightweightPipeline\"}", true);
+            var pass = masterNode.model == PBRMasterNode.Model.Metallic ? m_ForwardPassMetallic : m_ForwardPassSpecular;
+            var subShader = new ShaderStringBuilder();
+            subShader.AppendLine("SubShader");
+            using (subShader.BlockScope())
+            {
+                subShader.AppendLine("Tags{ \"RenderPipeline\" = \"LightweightPipeline\"}");
 
-            var materialOptions = ShaderGenerator.GetMaterialOptionsFromAlphaMode(masterNode.alphaMode);
-            var tagsVisitor = new ShaderGenerator();
-            materialOptions.GetTags(tagsVisitor);
-            subShader.AddShaderChunk(tagsVisitor.GetShaderString(0), true);
+                var materialOptions = ShaderGenerator.GetMaterialOptionsFromAlphaMode(masterNode.alphaMode);
+                var tagsVisitor = new ShaderGenerator();
+                materialOptions.GetTags(tagsVisitor);
+                subShader.AppendLines(tagsVisitor.GetShaderString(0));
 
-            subShader.AddShaderChunk(
-                GetShaderPassFromTemplate(
-                    "lightweightPBRForwardPass.template",
+                subShader.AppendLines(GetShaderPassFromTemplate(
+                    forwardTemplate,
                     masterNode,
-                    masterNode.model == PBRMasterNode.Model.Metallic ? m_ForwardPassMetallic : m_ForwardPassSpecular,
+                    pass,
                     mode,
-                    materialOptions),
-                true);
+                    materialOptions));
 
-            var extraPassesTemplateLocation = ShaderGenerator.GetTemplatePath("lightweightPBRExtraPasses.template");
-            if (File.Exists(extraPassesTemplateLocation))
-                subShader.AddShaderChunk(File.ReadAllText(extraPassesTemplateLocation), true);
+                subShader.AppendLines(GetExtraPassesFromTemplate(extraTemplate, masterNode, pass, mode));
+            }
 
-            subShader.Deindent();
-            subShader.AddShaderChunk("}", true);
-
-            return subShader.GetShaderString(0);
+            return subShader.ToString();
         }
     }
 }

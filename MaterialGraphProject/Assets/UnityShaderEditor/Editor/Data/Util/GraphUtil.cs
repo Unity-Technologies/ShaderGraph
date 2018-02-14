@@ -30,24 +30,30 @@ namespace UnityEditor.ShaderGraph
 
         internal static void GenerateApplicationVertexInputs(ShaderGraphRequirements graphRequiements, ShaderGenerator vertexInputs)
         {
-            vertexInputs.AddShaderChunk("struct GraphVertexInput", false);
-            vertexInputs.AddShaderChunk("{", false);
-            vertexInputs.Indent();
-            vertexInputs.AddShaderChunk("float4 vertex : POSITION;", false);
-            vertexInputs.AddShaderChunk("float3 normal : NORMAL;", false);
-            vertexInputs.AddShaderChunk("float4 tangent : TANGENT;", false);
+            var builder = new ShaderStringBuilder();
+            GenerateApplicationVertexInputs(graphRequiements, builder);
+            vertexInputs.AddShaderChunk(builder.ToString(), false);
+        }
 
-            if (graphRequiements.requiresVertexColor)
+        internal static void GenerateApplicationVertexInputs(ShaderGraphRequirements graphRequiements, ShaderStringBuilder vertexInputs)
+        {
+            vertexInputs.AppendLine("struct GraphVertexInput");
+            using (vertexInputs.BlockSemicolonScope())
             {
-                vertexInputs.AddShaderChunk("float4 color : COLOR;", false);
+                vertexInputs.AppendLine("float4 vertex : POSITION;");
+                vertexInputs.AppendLine("float3 normal : NORMAL;");
+                vertexInputs.AppendLine("float4 tangent : TANGENT;");
+
+                if (graphRequiements.requiresVertexColor)
+                {
+                    vertexInputs.AppendLine("float4 color : COLOR;");
+                }
+
+                foreach (var channel in graphRequiements.requiresMeshUVs.Distinct())
+                    vertexInputs.AppendLine("float4 texcoord{0} : TEXCOORD{0};", (int)channel);
+
+                vertexInputs.AppendLine("UNITY_VERTEX_INPUT_INSTANCE_ID");
             }
-
-            foreach (var channel in graphRequiements.requiresMeshUVs.Distinct())
-                vertexInputs.AddShaderChunk(string.Format("float4 texcoord{0} : TEXCOORD{0};", (int)channel), false);
-
-            vertexInputs.AddShaderChunk("UNITY_VERTEX_INPUT_INSTANCE_ID", true);
-            vertexInputs.Deindent();
-            vertexInputs.AddShaderChunk("};", false);
         }
 
         static void Visit(List<INode> outputList, Dictionary<Guid, INode> unmarkedNodes, INode node)

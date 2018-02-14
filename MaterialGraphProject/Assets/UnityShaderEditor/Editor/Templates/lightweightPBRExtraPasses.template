@@ -16,7 +16,49 @@ Pass
     #pragma vertex ShadowPassVertex
     #pragma fragment ShadowPassFragment
 
-    #include "LWRP/ShaderLibrary/LightweightPassShadow.hlsl"
+    #include "LWRP/ShaderLibrary/Core.hlsl"
+
+${Graph}
+
+    // x: global clip space bias, y: normal world space bias
+    float4 _ShadowBias;
+    float3 _LightDirection;
+
+    float4 ShadowPassVertex(GraphVertexInput v) : SV_POSITION
+    {
+		VertexDescriptionInputs vdi = (VertexDescriptionInputs)0;
+
+${VertexDescriptionInputs}
+
+	    VertexDescription vd = PopulateVertexData(vdi);
+        v.vertex.xyz = vd.Position;
+
+        float3 positionWS = TransformObjectToWorld(v.vertex.xyz);
+        float3 normalWS = TransformObjectToWorldDir(v.normal);
+
+        float invNdotL = 1.0 - saturate(dot(_LightDirection, normalWS));
+        float scale = invNdotL * _ShadowBias.y;
+
+        // normal bias is negative since we want to apply an inset normal offset
+        positionWS = normalWS * scale.xxx + positionWS;
+        float4 clipPos = TransformWorldToHClip(positionWS);
+
+        // _ShadowBias.x sign depens on if platform has reversed z buffer
+        clipPos.z += _ShadowBias.x;
+
+    #if defined(UNITY_REVERSED_Z)
+        clipPos.z = min(clipPos.z, 1.0);
+    #else
+        clipPos.z = max(clipPos.z, 0.0);
+    #endif
+        return clipPos;
+    }
+
+    half4 ShadowPassFragment() : SV_TARGET
+    {
+        return 0;
+    }
+
     ENDHLSL
 }
 
@@ -36,9 +78,17 @@ Pass
 
     #include "LWRP/ShaderLibrary/Core.hlsl"
 
-    float4 vert(float4 pos : POSITION) : SV_POSITION
+${Graph}
+
+    float4 vert(GraphVertexInput v) : SV_POSITION
     {
-        return TransformObjectToHClip(pos.xyz);
+		VertexDescriptionInputs vdi = (VertexDescriptionInputs)0;
+
+${VertexDescriptionInputs}
+
+	    VertexDescription vd = PopulateVertexData(vdi);
+        v.vertex.xyz = vd.Position;
+        return TransformObjectToHClip(v.vertex.xyz);
     }
 
     half4 frag() : SV_TARGET
