@@ -1,6 +1,8 @@
 using System;
 using UnityEditor.Graphing;
+using UnityEditor.ShaderGraph.Drawing.Slots;
 using UnityEngine;
+using UnityEngine.Experimental.UIElements;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -28,9 +30,14 @@ namespace UnityEditor.ShaderGraph
 
         public override void CopyValuesFrom(MaterialSlot foundSlot)
         {
-            var slot = foundSlot as NormalMaterialSlot;
+            var slot = foundSlot as SpaceMaterialSlot;
             if (slot != null)
                 space = slot.space;
+        }
+
+        public override VisualElement InstantiateControl()
+        {
+            return new SpaceSlotControlView(this);
         }
     }
 }
