@@ -2,9 +2,11 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor.Graphing;
 using UnityEditor.Graphing.Util;
 using UnityEngine;
+using UnityEngine.Experimental.UIElements;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -20,7 +22,7 @@ namespace UnityEditor.ShaderGraph
             {
                 if (char.IsUpper(text[i]))
                     if ((text[i - 1] != ' ' && !char.IsUpper(text[i - 1])) ||
-                        (preserveAcronyms && char.IsUpper(text[i - 1]) && 
+                        (preserveAcronyms && char.IsUpper(text[i - 1]) &&
                         i < text.Length - 1 && !char.IsUpper(text[i + 1])))
                         newText.Append(' ');
                 newText.Append(text[i]);
@@ -333,6 +335,14 @@ namespace UnityEditor.ShaderGraph
             }
 
             return s_LegacyTypeRemapping;
+        }
+
+        static Type s_ToolTip = typeof(EditorWindow).Assembly.GetType("UnityEditor.Experimental.UIElements.TooltipExtension", true);
+
+        public static void AddToolTip(VisualElement e, string tooltip)
+        {
+            MethodInfo staticMethodInfo = s_ToolTip.GetMethod("AddTooltip", BindingFlags.Static | BindingFlags.NonPublic);
+            staticMethodInfo.Invoke(null, new object[] { e, tooltip });
         }
     }
 }
