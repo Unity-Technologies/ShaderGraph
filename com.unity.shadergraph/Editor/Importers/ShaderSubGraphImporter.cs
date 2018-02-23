@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor.ShaderGraph;
 using UnityEngine;
 using System.IO;
 using System.Text;
 
-[ScriptedImporter(1, "ShaderSubGraph")]
+[ScriptedImporter(1, new string[]{ "ShaderSubGraph", "shadersubgraph"})]
 public class ShaderSubGraphImporter : ScriptedImporter
 {
     public override void OnImportAsset(AssetImportContext ctx)

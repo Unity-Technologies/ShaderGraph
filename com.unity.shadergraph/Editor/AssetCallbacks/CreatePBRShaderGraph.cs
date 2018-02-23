@@ -9,7 +9,7 @@ namespace UnityEditor.ShaderGraph
         public static void CreateMaterialGraph()
         {
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, CreateInstance<CreatePBRShaderGraph>(),
-                "New Shader Graph.ShaderGraph", null, null);
+                "New Shader Graph.shadergraph", null, null);
         }
 
         public override void Action(int instanceId, string pathName, string resourceFile)

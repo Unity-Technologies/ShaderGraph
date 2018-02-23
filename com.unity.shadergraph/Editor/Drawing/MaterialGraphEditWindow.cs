@@ -113,7 +113,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                         node.Dirty(ModificationScope.Node);
                     forceRedrawPreviews = false;
                 }
-                    
+
                 graphEditorView.HandleGraphChanges();
                 graphObject.graph.ClearChanges();
             }
@@ -432,14 +432,14 @@ namespace UnityEditor.ShaderGraph.Drawing
                     return;
 
                 var path = AssetDatabase.GetAssetPath(asset);
-                var extension = Path.GetExtension(path);
+                var extension = Path.GetExtension(path).ToLower();
                 Type graphType;
                 switch (extension)
                 {
-                    case ".ShaderGraph":
+                    case ".shadergraph":
                         graphType = typeof(MaterialGraph);
                         break;
-                    case ".ShaderSubGraph":
+                    case ".shadersubgraph":
                         graphType = typeof(SubGraph);
                         break;
                     default:

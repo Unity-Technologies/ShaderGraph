@@ -21,8 +21,8 @@ public class ShaderGraphImporterEditor : ScriptedImporterEditor
     internal static bool ShowGraphEditWindow(string path)
     {
         var guid = AssetDatabase.AssetPathToGUID(path);
-        var extension = Path.GetExtension(path);
-        if (extension != ".ShaderGraph" && extension != ".LayeredShaderGraph" && extension != ".ShaderSubGraph" && extension != ".ShaderRemapGraph")
+        var extension = Path.GetExtension(path).ToLower();
+        if (extension != ".shadergraph" && extension != ".layeredshadergraph" && extension != ".shadersubgraph" && extension != ".shaderremapgraph")
             return false;
 
         var foundWindow = false;
