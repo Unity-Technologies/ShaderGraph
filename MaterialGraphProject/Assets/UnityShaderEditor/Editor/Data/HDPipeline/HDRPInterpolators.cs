@@ -350,67 +350,6 @@ namespace UnityEditor.ShaderGraph
             return result.ToString();
         }
 
-        /*
-        private static string function_AttributesMeshToVaryingsMeshToPS =
-@"            
-        VaryingsMeshToPS AttributesMeshToVaryingsMeshToPS(AttributesMesh input)
-        {
-            VaryingsMeshToPS output;
-
-$VaryingsMeshToPS.positionWS:       output.positionWS = GetCameraRelativePositionWS(positionWS);
-
-            return output;
-        }
-";      */
-
-        // this translates the new dependency tracker into the old preprocessor definitions for the existing shader code
-        private static string defines_ActiveFields =
-@"
-$AttributesMesh.normalOS:               #define ATTRIBUTES_NEED_NORMAL
-$AttributesMesh.tangentOS:              #define ATTRIBUTES_NEED_TANGENT
-$AttributesMesh.uv0:                    #define ATTRIBUTES_NEED_TEXCOORD0
-$AttributesMesh.uv1:                    #define ATTRIBUTES_NEED_TEXCOORD1
-$AttributesMesh.uv2:                    #define ATTRIBUTES_NEED_TEXCOORD2
-$AttributesMesh.uv3:                    #define ATTRIBUTES_NEED_TEXCOORD3
-$AttributesMesh.color:                  #define ATTRIBUTES_NEED_COLOR
-$VaryingsMeshToPS.positionWS:           #define VARYINGS_NEED_POSITION_WS
-$VaryingsMeshToPS.normalWS:             #define VARYINGS_NEED_TANGENT_TO_WORLD
-$VaryingsMeshToPS.texCoord0:            #define VARYINGS_NEED_TEXCOORD0
-$VaryingsMeshToPS.texCoord1:            #define VARYINGS_NEED_TEXCOORD1
-$VaryingsMeshToPS.texCoord2:            #define VARYINGS_NEED_TEXCOORD2
-$VaryingsMeshToPS.texCoord3:            #define VARYINGS_NEED_TEXCOORD3
-$VaryingsMeshToPS.color:                #define VARYINGS_NEED_COLOR
-";
-
-        private static string function_BuildFragInputs =
-@"
-        FragInputs BuildFragInputs(VaryingsMeshToPS input)
-        {
-            FragInputs output;
-            ZERO_INITIALIZE(FragInputs, output);
-
-            // Init to some default value to make the computer quiet (else it output 'divide by zero' warning even if value is not used).
-            // TODO: this is a really poor workaround, but the variable is used in a bunch of places
-            // to compute normals which are then passed on elsewhere to compute other values...
-            output.worldToTangent = k_identity3x3;
-             output.positionSS = input.positionCS;       // input.positionCS is SV_Position
-
-$FragInputs.positionWS:         output.positionWS = input.positionWS;
-$FragInputs.worldToTangent:     output.worldToTangent = BuildWorldToTangent(input.tangentWS, input.normalWS);
-$FragInputs.texCoord0:          output.texCoord0 = input.texCoord0;
-$FragInputs.texCoord1:          output.texCoord1 = input.texCoord1;
-$FragInputs.texCoord2:          output.texCoord2 = input.texCoord2;
-$FragInputs.texCoord3:          output.texCoord3 = input.texCoord3;
-$FragInputs.color:              output.color = input.color;
-$FragInputs.isFrontFace:        output.isFrontFace = IS_FRONT_VFACE(input.cullFace, true, false);       // TODO: SHADER_STAGE_FRAGMENT only
-$FragInputs.isFrontFace:        // Handle handness of the view matrix (In Unity view matrix default to a determinant of -1)
-$FragInputs.isFrontFace:        // when we render a cubemap the view matrix handness is flipped (due to convention used for cubemap) we have a determinant of +1
-$FragInputs.isFrontFace:        output.isFrontFace = _ViewParam.x <  0.0 ? output.isFrontFace : !output.isFrontFace;
-
-            return output;
-        }
-";
-
         private static string function_InterpolateWithBaryCoordsMeshToDS =
 @"
 VaryingsMeshToDS InterpolateWithBaryCoordsMeshToDS(VaryingsMeshToDS input0, VaryingsMeshToDS input1, VaryingsMeshToDS input2, float3 baryCoords)
@@ -463,31 +402,6 @@ $VaryingsMeshToDS.color:            TESSELLATION_INTERPOLATE_BARY(color, baryCoo
     };
 
 
-    private static string function_FragInputsToGraphInputs =
-        @"
-        GraphInputs FragInputsToGraphInputs(FragInputs input, float3 viewWS)
-        {
-            GraphInputs output;
-            ZERO_INITIALIZE(GraphInputs, output);
-
-$GraphInputs.WorldSpaceNormal:          output.WorldSpaceNormal =            normalize(input.worldToTangent[2].xyz);
-$GraphInputs.WorldSpaceTangent:		    output.WorldSpaceTangent =           input.worldToTangent[0].xyz;
-$GraphInputs.WorldSpaceBiTangent:       output.WorldSpaceBiTangent =         input.worldToTangent[1].xyz;
-$GraphInputs.WorldSpaceViewDirection:   output.WorldSpaceViewDirection =     normalize(viewWS);
-$GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS;
-
-$GraphInputs.screenPosition:            output.screenPosition = input.positionSS;
-
-$GraphInputs.uv0:                       output.uv0 =    float4(input.texCoord0, 0.0f, 0.0f);
-$GraphInputs.uv1:                       output.uv1 =    float4(input.texCoord1, 0.0f, 0.0f);
-$GraphInputs.uv2:                       output.uv2 =    float4(input.texCoord2, 0.0f, 0.0f);
-$GraphInputs.uv3:                       output.uv3 =    float4(input.texCoord3, 0.0f, 0.0f);
-
-$GraphInputs.vertexColor:               output.vertexColor =    input.color;
-
-            return output;
-        }
-";
         // an easier to use version of substring Append() -- explicit inclusion on each end, and checks for positive length
         private static void AppendSubstring(System.Text.StringBuilder target, string str, int start, bool includeStart, int end, bool includeEnd)
         {
@@ -506,12 +420,14 @@ $GraphInputs.vertexColor:               output.vertexColor =    input.color;
             }
         }
 
-        private static string PreprocessShaderCode(string code, HashSet<string> activeFields)
+        public static System.Text.StringBuilder PreprocessShaderCode(string code, HashSet<string> activeFields, Dictionary<string, string> namedFragments = null, System.Text.StringBuilder result = null)
         {
-            System.Text.StringBuilder result = new System.Text.StringBuilder();
+            if (result == null)
+            {
+                result= new System.Text.StringBuilder();
+            }
             int cur = 0;
             int end = code.Length;
-
 
             while (cur < end)
             {
@@ -536,55 +452,111 @@ $GraphInputs.vertexColor:               output.vertexColor =    input.color;
                         endln = end;
                     }
 
-                    // search for the colon within the current line
-                    int colon = -1;
-                    if (endln > dollar + 1)
+                    // see if the character after '$' is '{', which would indicate a named fragment splice
+                    if ((dollar+1 < endln) && (code[dollar + 1] == '{'))
                     {
-                        colon = code.IndexOf(':', dollar + 1, endln - dollar - 1);
-                    }
-
-                    int predicateLength = colon - dollar - 1;
-                    if ((colon < 0) || (predicateLength <= 0))
-                    {
-                        // no colon found... error!  Spit out error and context
-                        if (colon < 0)
+                        // named fragment splice
+                        // search for the '}' within the current line
+                        int curlystart = dollar + 1;
+                        int curlyend = -1;
+                        if (endln > curlystart + 1)
                         {
-                            result.Append("// ERROR: unterminated escape sequence ('$' and ':' must be matched)\n");
+                            curlyend = code.IndexOf('}', curlystart + 1, endln - curlystart - 1);
+                        }
+
+                        int nameLength = curlyend - dollar + 1;
+                        if ((curlyend < 0) || (nameLength <= 0))
+                        {
+                            // no } found, or zero length name
+                            if (curlyend < 0)
+                            {
+                                result.Append("// ERROR: unterminated escape sequence ('${' and '}' must be matched)\n");
+                            }
+                            else
+                            {
+                                result.Append("// ERROR: name '${}' is empty\n");
+                            }
+
+                            // append the line (commented out) for context
+                            result.Append("//    ");
+                            AppendSubstring(result, code, dollar, true, endln, false);
+                            result.Append("\n");
                         }
                         else
                         {
-                            result.Append("// ERROR: predicate is zero length\n");
-                        }
-                        result.Append("//    ");
+                            // } found!
+                            // ugh, this probably allocates memory -- wish we could do the name lookup direct from a substring
+                            string name = code.Substring(dollar, nameLength);
 
-                        // append the line
-                        AppendSubstring(result, code, dollar, true, endln, false);
-                        result.Append("\n");
-                        cur = endln + 1;    
+                            string fragment;                            
+                            if ((namedFragments != null) && namedFragments.TryGetValue(name, out fragment))
+                            {
+                                // splice the fragment
+                                result.Append(fragment);
+                                // advance to just after the '}'
+                                cur = curlyend + 1;
+                            }
+                            else
+                            {
+                                // no named fragment found
+                                result.AppendFormat("/* Could not find named fragment '{0}' */", name);
+                                cur = curlyend + 1;
+                            }
+                        }
                     }
                     else
                     {
-                        // colon found!
-                        // ugh, this probably allocates memory -- wish we could do the field lookup direct from a substring
-                        string predicate = code.Substring(dollar + 1, predicateLength);
-
-                        if (activeFields.Contains(predicate))
+                        // it's a predicate
+                        // search for the colon within the current line
+                        int colon = -1;
+                        if (endln > dollar + 1)
                         {
-                            // predicate is active, append the line
-                            AppendSubstring(result, code, colon, false, endln, false);
-                            result.Append("\n");
-                            cur = endln + 1;
+                            colon = code.IndexOf(':', dollar + 1, endln - dollar - 1);
+                        }
+
+                        int predicateLength = colon - dollar - 1;
+                        if ((colon < 0) || (predicateLength <= 0))
+                        {
+                            // no colon found... error!  Spit out error and context
+                            if (colon < 0)
+                            {
+                                result.Append("// ERROR: unterminated escape sequence ('$' and ':' must be matched)\n");
+                            }
+                            else
+                            {
+                                result.Append("// ERROR: predicate is zero length\n");
+                            }
+
+                            // append the line (commented out) for context
+                            result.Append("//    ");
+                            AppendSubstring(result, code, dollar, true, endln, false);
                         }
                         else
                         {
-                            // predicate is not active -- drop line
-                            cur = endln + 1;
+                            // colon found!
+                            // ugh, this probably allocates memory -- wish we could do the field lookup direct from a substring
+                            string predicate = code.Substring(dollar + 1, predicateLength);
+
+                            if (activeFields.Contains(predicate))
+                            {
+                                // predicate is active, append the line
+                                result.Append(' ', predicateLength+2);
+                                AppendSubstring(result, code, colon, false, endln, false);
+                            }
+                            else
+                            {
+                                // predicate is not active -- comment out line
+                                result.Append("//");
+                                result.Append(' ', predicateLength);
+                                AppendSubstring(result, code, colon, false, endln, false);
+                            }
                         }
+                        cur = endln + 1;
                     }
                 }
             }
 
-            return result.ToString();
+            return result;
         }
 
         private static void ApplyDependencies(HashSet<string> activeFields, List<Dependency[]> dependsList)
@@ -707,14 +679,16 @@ $GraphInputs.vertexColor:               output.vertexColor =    input.color;
             ShaderGenerator codeResult,
             ShaderGraphRequirements graphRequirements,
             ShaderGraphRequirements modelRequirements,
-            CoordinateSpace preferedCoordinateSpace)
+            CoordinateSpace preferedCoordinateSpace,
+            out HashSet<string> activeFields)
         {
             if (preferedCoordinateSpace == CoordinateSpace.Tangent)
                 preferedCoordinateSpace = CoordinateSpace.World;
 
+
             // build initial requirements
-            var combinedRequirements = graphRequirements.Union(modelRequirements);
-            HashSet<string> activeFields = new HashSet<string>();
+//            var combinedRequirements = graphRequirements.Union(modelRequirements);
+            activeFields = new HashSet<string>();
             AddActiveFieldsFromGraphRequirements(activeFields, graphRequirements);
             AddActiveFieldsFromModelRequirements(activeFields, modelRequirements);
 
@@ -731,10 +705,6 @@ $GraphInputs.vertexColor:               output.vertexColor =    input.color;
                 );
             }
 
-            // generate defines based on requirements
-            string defines = PreprocessShaderCode(defines_ActiveFields, activeFields);
-            definesResult.AddShaderChunk(defines, false);
-
             definesResult.AddShaderChunk("// ACTIVE FIELDS:", false);
             foreach (string f in activeFields)
             {
@@ -749,9 +719,6 @@ $GraphInputs.vertexColor:               output.vertexColor =    input.color;
             result = result + BuildPackedType(typeof(VaryingsMeshToPS), activeFields);
             result = result + BuildPackedType(typeof(VaryingsMeshToDS), activeFields);
             result = result + BuildType(typeof(GraphInputs), activeFields);
-
-            result = result + PreprocessShaderCode(function_BuildFragInputs, activeFields);
-            result = result + PreprocessShaderCode(function_FragInputsToGraphInputs, activeFields);
 
             Debug.Log(result);
 

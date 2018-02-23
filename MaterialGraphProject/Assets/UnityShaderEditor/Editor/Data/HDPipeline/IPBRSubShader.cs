@@ -3,6 +3,6 @@
 namespace UnityEditor.ShaderGraph {
     public interface IPBRSubShader
     {
-        ShaderGenerator GetPipelineProperties(PBRMasterNode masterNode, GenerationMode mode);
+//        ShaderGenerator GetPipelineProperties(PBRMasterNode masterNode, GenerationMode mode);
     }
 }
