@@ -46,6 +46,14 @@ namespace UnityEditor.ShaderGraph
                 "   Pass Replace",
                 "}"
             },
+            ExtraDefines = new List<string>()
+            {
+                "#pragma multi_compile _ DEBUG_DISPLAY",
+                "#pragma multi_compile _ LIGHTMAP_ON",
+                "#pragma multi_compile _ DIRLIGHTMAP_COMBINED",
+                "#pragma multi_compile _ DYNAMICLIGHTMAP_ON",
+                "#pragma multi_compile _ SHADOWS_SHADOWMASK",
+            },
             Includes = new List<string>()
             {
                 "#include \"HDRP/ShaderPass/ShaderPassGBuffer.hlsl\"",
@@ -82,6 +90,11 @@ namespace UnityEditor.ShaderGraph
             },
             ExtraDefines = new List<string>()
             {
+                "#pragma multi_compile _ DEBUG_DISPLAY",
+                "#pragma multi_compile _ LIGHTMAP_ON",
+                "#pragma multi_compile _ DIRLIGHTMAP_COMBINED",
+                "#pragma multi_compile _ DYNAMICLIGHTMAP_ON",
+                "#pragma multi_compile _ SHADOWS_SHADOWMASK",
                 "#define SHADERPASS_GBUFFER_BYPASS_ALPHA_TEST",
             },
             Includes = new List<string>()
@@ -272,6 +285,17 @@ namespace UnityEditor.ShaderGraph
             Name = "TransparentBackface",
             LightMode = "TransparentBackface",
             ShaderPassName = "SHADERPASS_FORWARD",
+            CullOverride = "Cull Front",
+            ExtraDefines = new List<string>()
+            {
+                "#pragma multi_compile _ DEBUG_DISPLAY",
+                "#pragma multi_compile _ LIGHTMAP_ON",
+                "#pragma multi_compile _ DIRLIGHTMAP_COMBINED",
+                "#pragma multi_compile _ DYNAMICLIGHTMAP_ON",
+                "#pragma multi_compile _ SHADOWS_SHADOWMASK",
+                "#pragma multi_compile LIGHTLOOP_SINGLE_PASS LIGHTLOOP_TILE_PASS",
+                "#pragma multi_compile USE_FPTL_LIGHTLIST USE_CLUSTERED_LIGHTLIST",
+            },
             Includes = new List<string>()
             {
                 "#include \"HDRP/ShaderPass/ShaderPassForward.hlsl\"",
@@ -318,7 +342,6 @@ namespace UnityEditor.ShaderGraph
             },
             Includes = new List<string>()
             {
-                "#include \"HDRP/Lighting/Lighting.hlsl\"",
                 "#include \"HDRP/ShaderPass/ShaderPassForward.hlsl\"",
             },
             PixelShaderSlots = new List<int>()
@@ -604,14 +627,12 @@ namespace UnityEditor.ShaderGraph
             graph.AddShaderChunk("// Graph evaluation", false);
             graph.AddShaderChunk(graphEvalFunction.GetShaderString(2), false);
 
-            var tagsVisitor = new ShaderGenerator();
             var blendingVisitor = new ShaderGenerator();
             var cullingVisitor = new ShaderGenerator();
             var zTestVisitor = new ShaderGenerator();
             var zWriteVisitor = new ShaderGenerator();
             var stencilVisitor = new ShaderGenerator();
 
-            materialOptions.GetTags(tagsVisitor);
             if (pass.BlendOverride != null)
             {
                 blendingVisitor.AddShaderChunk(pass.BlendOverride, true);
@@ -746,7 +767,6 @@ namespace UnityEditor.ShaderGraph
             namedFragments.Add("${PassName}",               pass.Name);
             namedFragments.Add("${Includes}",               shaderPassIncludes.GetShaderString(2));
             namedFragments.Add("${InterpolatorPacking}",    packedInterpolatorCode.GetShaderString(2));
-            namedFragments.Add("${Tags}",                   tagsVisitor.GetShaderString(2));
             namedFragments.Add("${Blending}",               blendingVisitor.GetShaderString(2));
             namedFragments.Add("${Culling}",                cullingVisitor.GetShaderString(2));
             namedFragments.Add("${ZTest}",                  zTestVisitor.GetShaderString(2));
@@ -808,38 +828,57 @@ namespace UnityEditor.ShaderGraph
                         break;
                 }
 
-                subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassGBuffer, mode, materialOptions), true);
+                // Add tags at the SubShader level
+                {
+                    var tagsVisitor = new ShaderGenerator();
+                    materialOptions.GetTags(tagsVisitor);
+                    subShader.AddShaderChunk(tagsVisitor.GetShaderString(2), false);
+                }
 
-                subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassGBufferWithPrepass, mode, materialOptions), true);
+                if (masterNode.alphaMode == PBRMasterNode.AlphaMode.Opaque)
+                {
+                    subShader.AddShaderChunk(
+                        GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassGBuffer, mode, materialOptions), true);
 
-                subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassMETA, mode, materialOptions), true);
+                    subShader.AddShaderChunk(
+                        GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassGBufferWithPrepass, mode, materialOptions), true);
+
+                    subShader.AddShaderChunk(
+                        GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassMETA, mode, materialOptions), true);
+                }
 
                 subShader.AddShaderChunk(
                     GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassShadowCaster, mode, materialOptions), true);
 
+                if (masterNode.alphaMode == PBRMasterNode.AlphaMode.Opaque)
+                {
+                    subShader.AddShaderChunk(
+                        GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassDepthOnly, mode, materialOptions), true);
+                }
+
+//                subShader.AddShaderChunk(
+//                        GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassMotionVectors, mode, materialOptions), true);
+
+//                 subShader.AddShaderChunk(
+//                     GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassDistortion, mode, materialOptions), true);
+
+//                 if (masterNode.alphaMode != PBRMasterNode.AlphaMode.Opaque)
+//                 {
+//                     subShader.AddShaderChunk(
+//                         GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentDepthPrepass, mode, materialOptions), true);
+// 
+//                     subShader.AddShaderChunk(
+//                         GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentBackface, mode, materialOptions), true);
+//                 }
+
                 subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassDepthOnly, mode, materialOptions), true);
+                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassForward, mode, materialOptions), true);
 
-                subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassMotionVectors, mode, materialOptions), true);
-
-                subShader.AddShaderChunk(
-                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassDistortion, mode, materialOptions), true);
-
-//                subShader.AddShaderChunk(
-//                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentDepthPrepass, mode, materialOptions), true);
-
-//                subShader.AddShaderChunk(
-//                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentBackface, mode, materialOptions), true);
-
-//                subShader.AddShaderChunk(
-//                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassForward, mode, materialOptions), true);
-
-//                subShader.AddShaderChunk(
-//                    GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentDepthPostpass, mode, materialOptions), true);
+//                 if (masterNode.alphaMode != PBRMasterNode.AlphaMode.Opaque)
+//                 {
+//                     subShader.AddShaderChunk(
+//                         GetShaderPassFromTemplate("HDPBRPass.template", masterNode, m_PassTransparentDepthPostpass, mode, materialOptions), true);
+//                 }
             }
             subShader.Deindent();
             subShader.AddShaderChunk("}", true);

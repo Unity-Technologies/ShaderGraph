@@ -720,8 +720,6 @@ $VaryingsMeshToDS.color:            TESSELLATION_INTERPOLATE_BARY(color, baryCoo
             result = result + BuildPackedType(typeof(VaryingsMeshToDS), activeFields);
             result = result + BuildType(typeof(GraphInputs), activeFields);
 
-            Debug.Log(result);
-
             codeResult.AddShaderChunk(result, false);
 
 /*

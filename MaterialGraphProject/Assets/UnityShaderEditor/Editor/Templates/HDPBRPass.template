@@ -5,14 +5,6 @@ Pass
     Tags { "LightMode" = "${LightMode}" }
 
     //-------------------------------------------------------------------------------------
-    // Tags
-    //-------------------------------------------------------------------------------------
-${Tags}
-    //-------------------------------------------------------------------------------------
-    // End Tags
-    //-------------------------------------------------------------------------------------
-
-    //-------------------------------------------------------------------------------------
     // Render Modes (Blend, Cull, ZTest, Stencil, etc)
     //-------------------------------------------------------------------------------------
 ${Blending}
@@ -95,9 +87,16 @@ ${Defines}
     #ifdef DEBUG_DISPLAY
         #include "HDRP/Debug/DebugDisplay.hlsl"
     #endif
-    #include "HDRP/Material/Material.hlsl" 
-	#include "HDRP/Material/MaterialUtilities.hlsl"
-    
+
+    #if (SHADERPASS == SHADERPASS_FORWARD)
+        // used for shaders that want to do lighting (and materials)
+        #include "HDRP/Lighting/Lighting.hlsl"
+    #else
+        // used for shaders that don't need lighting
+        #include "HDRP/Material/Material.hlsl"
+    #endif
+    #include "HDRP/Material/MaterialUtilities.hlsl"
+
     // this function assumes the bitangent flip is encoded in tangentWS.w
     float3x3 BuildWorldToTangent(float4 tangentWS, float3 normalWS)
     {
@@ -228,18 +227,8 @@ ${Graph}
         // compute world space normal
         GetNormalWS(fragInputs, V, normalTS, surfaceData.normalWS);
 
-        // By default we use the ambient occlusion with Tri-ace trick (apply outside) for specular occlusion.
-        // If user provide bent normal then we process a better term
-#if defined(_BENTNORMALMAP) && defined(_ENABLESPECULAROCCLUSION)
-        // If we have bent normal and ambient occlusion, process a specular occlusion
-        surfaceData.specularOcclusion = GetSpecularOcclusionFromBentAO(V, bentNormalWS, surfaceData);
-#elif defined(_MASKMAP)
-        surfaceData.specularOcclusion = GetSpecularOcclusionFromAmbientOcclusion(NdotV, surfaceData.ambientOcclusion, PerceptualSmoothnessToRoughness(surfaceData.perceptualSmoothness));
-#else
-        surfaceData.specularOcclusion = 1.0;
-#endif
-
-        // This is use with anisotropic material
+        // TODO: use graphOutput tangent definition for anisotropy
+        surfaceData.tangentWS = normalize(fragInputs.worldToTangent[0].xyz);    // The tangent is not normalize in worldToTangent for mikkt. TODO: Check if it expected that we normalize with Morten. Tag: SURFACE_GRADIENT
         surfaceData.tangentWS = Orthonormalize(surfaceData.tangentWS, surfaceData.normalWS);
 
         // Init other parameters
@@ -255,6 +244,16 @@ ${Graph}
         surfaceData.transmittanceColor = float3(1.0, 1.0, 1.0);
         surfaceData.atDistance = 1000000.0;
         surfaceData.transmittanceMask = 0.0;
+
+        // By default we use the ambient occlusion with Tri-ace trick (apply outside) for specular occlusion.
+        // If user provide bent normal then we process a better term
+        surfaceData.specularOcclusion = 1.0;
+#if defined(_BENTNORMALMAP) && defined(_ENABLESPECULAROCCLUSION)
+        // If we have bent normal and ambient occlusion, process a specular occlusion
+        surfaceData.specularOcclusion = GetSpecularOcclusionFromBentAO(V, bentNormalWS, surfaceData);
+#elif defined(_MASKMAP)
+        surfaceData.specularOcclusion = GetSpecularOcclusionFromAmbientOcclusion(NdotV, surfaceData.ambientOcclusion, PerceptualSmoothnessToRoughness(surfaceData.perceptualSmoothness));
+#endif
     }
 
     void GetSurfaceAndBuiltinData(FragInputs fragInputs, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
