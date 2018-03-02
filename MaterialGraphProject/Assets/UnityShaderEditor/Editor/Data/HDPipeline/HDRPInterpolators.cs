@@ -236,12 +236,11 @@ namespace UnityEditor.ShaderGraph
                 ShaderSpliceUtil.ApplyDependencies(
                     activeFields,
                     new List<Dependency[]>()
-                {
-                    FragInputs.dependencies,
-                    VaryingsMeshToPS.standardDependencies,
-                    GraphInputs.dependencies,
-                }
-                    );
+                    {
+                        FragInputs.dependencies,
+                        VaryingsMeshToPS.standardDependencies,
+                        GraphInputs.dependencies,
+                    });
             }
 
             definesResult.AddShaderChunk("// ACTIVE FIELDS:", false);
@@ -251,15 +250,12 @@ namespace UnityEditor.ShaderGraph
             }
 
             // generate code based on requirements
-            string result;
-            result = ShaderSpliceUtil.BuildType(typeof(AttributesMesh), activeFields);
-            result = result + ShaderSpliceUtil.BuildType(typeof(VaryingsMeshToPS), activeFields);
-            result = result + ShaderSpliceUtil.BuildType(typeof(VaryingsMeshToDS), activeFields);
-            result = result + ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToPS), activeFields);
-            result = result + ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToDS), activeFields);
-            result = result + ShaderSpliceUtil.BuildType(typeof(GraphInputs), activeFields);
-
-            codeResult.AddShaderChunk(result, false);
+            ShaderSpliceUtil.BuildType(typeof(AttributesMesh), activeFields, codeResult);
+            ShaderSpliceUtil.BuildType(typeof(VaryingsMeshToPS), activeFields, codeResult);
+            ShaderSpliceUtil.BuildType(typeof(VaryingsMeshToDS), activeFields, codeResult);
+            ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToPS), activeFields, codeResult);
+            ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToDS), activeFields, codeResult);
+            ShaderSpliceUtil.BuildType(typeof(GraphInputs), activeFields, codeResult);
 
 /*
             // step 1:

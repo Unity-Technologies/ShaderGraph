@@ -47,7 +47,7 @@ namespace UnityEditor.ShaderGraph
             return m_Pragma;
         }
 
-        public void AddShaderChunk(string s, bool unique)
+        public void AddShaderChunk(string s, bool unique = false)
         {
             if (string.IsNullOrEmpty(s))
                 return;
@@ -56,6 +56,14 @@ namespace UnityEditor.ShaderGraph
                 return;
 
             m_ShaderChunks.Add(new ShaderChunk(m_IndentLevel, s));
+        }
+
+        public void AddGenerator(ShaderGenerator generator)
+        {
+            foreach (ShaderChunk chunk in generator.m_ShaderChunks)
+            {
+                m_ShaderChunks.Add(new ShaderChunk(m_IndentLevel + chunk.chunkIndentLevel, chunk.chunkString));
+            }
         }
 
         public void Indent()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Graphing;
@@ -101,13 +101,10 @@ namespace UnityEditor.ShaderGraph
             return result.ToString();
         }
 
-        public static string BuildType(System.Type t, HashSet<string> activeFields)
+        public static void BuildType(System.Type t, HashSet<string> activeFields, ShaderGenerator result)
         {
-            System.Text.StringBuilder result = new System.Text.StringBuilder();
-
-            result.Append("struct ");
-            result.Append(t.Name);
-            result.Append(" {\n");
+            result.AddShaderChunk("struct " + t.Name + " {");
+            result.Indent();
 
             foreach (FieldInfo field in t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
@@ -123,77 +120,61 @@ namespace UnityEditor.ShaderGraph
                             continue;
                         }
                     }
-                    result.Append("\t");
-                    result.Append(ConvertFieldType(field.FieldType));
-                    result.Append(" ");
-                    result.Append(field.Name);
 
+                    string semanticString = string.Empty;
                     object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
                     if (semantics.Length > 0)
                     {
                         Semantic first = (Semantic)semantics[0];
-                        result.Append(" : ");
-                        result.Append(first.semantic);
+                        semanticString = " : " + first.semantic;
                     }
 
-                    result.Append(";");
+                    string fieldDecl = ConvertFieldType(field.FieldType) + " " + field.Name + semanticString + ";" + (isOptional ? " // optional" : string.Empty);
 
-                    if (isOptional)
-                    {
-                        result.Append(" // optional");
-                    }
-                    result.Append("\n");
+                    result.AddShaderChunk(fieldDecl);
                 }
             }
-            result.Append("};\n");
-
-            return result.ToString();
+            result.Deindent();
+            result.AddShaderChunk("};");
         }
 
-        public static string BuildPackedType(System.Type unpacked, HashSet<string> activeFields)
+        public static void BuildPackedType(System.Type unpacked, HashSet<string> activeFields, ShaderGenerator result)
         {
             // for each interpolator, the number of components used (up to 4 for a float4 interpolator)
             List<int> packedCounts = new List<int>();
+            ShaderGenerator packer = new ShaderGenerator();
+            ShaderGenerator unpacker = new ShaderGenerator();
 
-            System.Text.StringBuilder result = new System.Text.StringBuilder();
-            System.Text.StringBuilder packer = new System.Text.StringBuilder();
-            System.Text.StringBuilder unpacker = new System.Text.StringBuilder();
+            string unpackedStruct = unpacked.Name.ToString();
+            string packedStruct = "Packed" + unpacked.Name;
+            string packerFunction = "Pack" + unpacked.Name;
+            string unpackerFunction = "Unpack" + unpacked.Name;
 
-            string unpackedName = unpacked.Name.ToString();
-            string packedName = "Packed" + unpacked.Name;
-            string packerName = "Pack" + unpacked.Name;
-            string unpackerName = "Unpack" + unpacked.Name;
+            // declare struct header:
+            //   struct packedStruct {
+            result.AddShaderChunk("struct " + packedStruct + " {");
+            result.Indent();
 
-            // declare struct header
-            result.Append("struct ");
-            result.Append(packedName);
-            result.Append(" {\n");
+            // declare function headers:
+            //   packedStruct packerFunction(unpackedStruct input)
+            //   {
+            //      packedStruct output;
+            packer.AddShaderChunk(packedStruct + " " + packerFunction + "(" + unpackedStruct + " input)");
+            packer.AddShaderChunk("{");
+            packer.Indent();
+            packer.AddShaderChunk(packedStruct + " output;");
 
-            // declare function headers
-            //        packer.AppendFormat("{0} {1}({2} input)\n{", packedName, packerName, unpackedName);
-            packer.Append(packedName);
-            packer.Append(" ");
-            packer.Append(packerName);
-            packer.Append("(");
-            packer.Append(unpackedName);
-            packer.Append(" input");
-            packer.Append(")\n{\n");
-            packer.AppendFormat("    {0} output;\n", packedName);
-
-            //        unpacker.AppendFormat("{0} {1}({2} input)\n{", unpackedName, unpackerName, packedName);
-            unpacker.Append(unpackedName);
-            unpacker.Append(" ");
-            unpacker.Append(unpackerName);
-            unpacker.Append("(");
-            unpacker.Append(packedName);
-            unpacker.Append(" input");
-            unpacker.Append(")\n{\n");
-            unpacker.AppendFormat("    {0} output;\n", unpackedName);
+            //   unpackedStruct unpackerFunction(packedStruct input)
+            //   {
+            //      unpackedStruct output;
+            unpacker.AddShaderChunk(unpackedStruct + " " + unpackerFunction + "(" + packedStruct + " input)");
+            unpacker.AddShaderChunk("{");
+            unpacker.Indent();
+            unpacker.AddShaderChunk(unpackedStruct + " output;");
 
             // TODO: this could do a better job packing
             // especially if we allowed breaking up fields to pack them into remaining space...
-            // would want to minimize the use of it,
-            // basically limit it to a final optimization if it reduces total number of interpolators declared
+            // (though we would want to minimize the use of it -- only if it improves final interpolator count, and is worth it on the target machine)
             foreach (FieldInfo field in unpacked.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 if (field.MemberType == MemberTypes.Field)
@@ -218,17 +199,17 @@ namespace UnityEditor.ShaderGraph
 
                     if (semantic != null)
                     {
-                        // not a packed value -- has an explicit bound semantic
+                        // not a packed value -- has an explicit bound semantic -- copy values directly through
                         int vectorCount = GetVectorCount(field.FieldType);
-                        result.AppendFormat("    {0} {1} : {2};    // unpacked (explicit semantic)\n", vectorTypeNames[vectorCount], field.Name, semantic.semantic);
-                        packer.AppendFormat("    output.{0} = input.{0};\n", field.Name);
-                        unpacker.AppendFormat("    output.{0} = input.{0};\n", field.Name);
+                        result.AddShaderChunk(vectorTypeNames[vectorCount] + " " + field.Name + " : " + semantic.semantic + "; // unpacked (explicit semantic)");
+                        packer.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
+                        unpacker.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
                     }
                     else
                     {
                         // pack field
                         int vectorCount = GetVectorCount(field.FieldType);
-                        int interpIndex = packedCounts.FindIndex(x => (x + vectorCount <= 4));      // super cheap way to pack: first slot that fits the whole value
+                        int interpIndex = packedCounts.FindIndex(x => (x + vectorCount <= 4));      // super simple packing: first slot that fits the whole value
                         int firstChannel;
                         if (interpIndex < 0)
                         {
@@ -245,9 +226,9 @@ namespace UnityEditor.ShaderGraph
                         }
 
                         // add code to packer and unpacker
-                        string channels = GetChannelSwizzle(firstChannel, vectorCount);
-                        packer.AppendFormat("    output.interp{0:00}.{1} = input.{2};\n", interpIndex, channels, field.Name);
-                        unpacker.AppendFormat("    output.{0} = input.interp{1:00}.{2};\n", field.Name, interpIndex, channels);
+                        string packedChannels = GetChannelSwizzle(firstChannel, vectorCount);
+                        packer.AddShaderChunk(string.Format("output.interp{0:00}.{1} = input.{2};", interpIndex, packedChannels, field.Name));
+                        unpacker.AddShaderChunk(string.Format("output.{0} = input.interp{1:00}.{2};", field.Name, interpIndex, packedChannels));
                     }
                 }
             }
@@ -256,18 +237,22 @@ namespace UnityEditor.ShaderGraph
             for (int index = 0; index < packedCounts.Count; index++)
             {
                 int count = packedCounts[index];
-                result.AppendFormat("    {0} interp{1:00} : TEXCOORD{1};    // auto-packed\n", vectorTypeNames[count], index);
+                result.AddShaderChunk(string.Format("{0} interp{1:00} : TEXCOORD{1}; // auto-packed", vectorTypeNames[count], index));
             }
 
             // close declarations
-            result.Append("};\n\n");
-            packer.Append("    return output;\n}\n\n");
-            unpacker.Append("    return output;\n}\n\n");
+            result.Deindent();
+            result.AddShaderChunk("};");
+            packer.AddShaderChunk("return output;");
+            packer.Deindent();
+            packer.AddShaderChunk("}");
+            unpacker.AddShaderChunk("return output;");
+            unpacker.Deindent();
+            unpacker.AddShaderChunk("}");
 
-            result.Append(packer);
-            result.Append(unpacker);
-
-            return result.ToString();
+            // combine all of the code
+            result.AddGenerator(packer);
+            result.AddGenerator(unpacker);
         }
 
         // an easier to use version of substring Append() -- explicit inclusion on each end, and checks for positive length
