@@ -45,7 +45,7 @@ public class ResizeBorderFrame : VisualElement
     {
         pickingMode = PickingMode.Ignore;
 
-        AddToClassList("reszieBorderFrame");
+        AddToClassList("resizeBorderFrame");
 
         m_ResizeSideHandles = new List<ResizeSideHandle>();
 

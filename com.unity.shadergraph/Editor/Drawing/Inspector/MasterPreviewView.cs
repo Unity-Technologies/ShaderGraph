@@ -7,6 +7,7 @@ using UnityEditor.Experimental.UIElements;
 using UnityEngine.Experimental.UIElements;
 using UnityEditor.Graphing;
 using UnityEditor.Graphing.Util;
+using UnityEditor.Graphs;
 using UnityEngine.Experimental.UIElements.StyleSheets;
 using Object = UnityEngine.Object;
 #if UNITY_2018_1
@@ -29,16 +30,24 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
         IMasterNode m_MasterNode;
         Mesh m_PreviousMesh;
 
+        bool m_Expanded = true;
+        VisualElement m_CollapsePreviewContainer;
+        VisualElement m_CollapsePreviewButton;
+        VisualElement m_Preview;
+        GraphEditorView m_View;
+        ResizeBorderFrame m_MasterPreviewResizeBorderFrame;
+
         List<string> m_DoNotShowPrimitives = new List<string>( new string[] {PrimitiveType.Plane.ToString()});
 
         static Type s_ContextualMenuManipulator = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypesOrNothing()).FirstOrDefault(t => t.FullName == "UnityEngine.Experimental.UIElements.ContextualMenuManipulator");
         static Type s_ObjectSelector = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypesOrNothing()).FirstOrDefault(t => t.FullName == "UnityEditor.ObjectSelector");
 
-        public MasterPreviewView(string assetName, PreviewManager previewManager, AbstractMaterialGraph graph)
+        public MasterPreviewView(string assetName, PreviewManager previewManager, AbstractMaterialGraph graph, GraphEditorView view)
         {
             this.clippingOptions = ClippingOptions.ClipAndCacheContents;
             m_PreviewManager = previewManager;
             m_Graph = graph;
+            m_View = view;
 
             AddStyleSheetPath("Styles/MasterPreviewView");
 
@@ -47,19 +56,65 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
             var topContainer = new VisualElement() { name = "top" };
             {
                 var title = new Label(assetName.Split('/').Last()) { name = "title" };
+
+                // Add preview collapse button on top of preview
+                m_CollapsePreviewContainer = new VisualElement { name = "collapse-container" };
+                m_CollapsePreviewContainer.AddToClassList("collapse-container");
+                m_CollapsePreviewButton = new VisualElement { name = "icon" };
+                m_CollapsePreviewButton.AddToClassList("icon");
+                m_CollapsePreviewContainer.Add(m_CollapsePreviewButton);
+                m_CollapsePreviewContainer.AddManipulator(new Clickable(() =>
+                {
+                    m_Graph.owner.RegisterCompleteObjectUndo("Collapse Preview");
+                    m_Expanded ^= true;
+                    UpdateExpandedButtonState();
+                    UpdatePreviewVisibility();
+                }));
+
                 topContainer.Add(title);
+                topContainer.Add(m_CollapsePreviewContainer);
             }
             Add(topContainer);
 
-            var middleContainer = new VisualElement {name = "middle"};
+            m_Preview = new VisualElement {name = "middle"};
             {
                 m_PreviewTextureView = CreatePreview(Texture2D.blackTexture);
                 m_PreviewScrollPosition = new Vector2(0f, 0f);
-                middleContainer.Add(m_PreviewTextureView);
-                middleContainer.AddManipulator(new Scrollable(OnScroll));
+                m_Preview.Add(m_PreviewTextureView);
+                m_Preview.AddManipulator(new Scrollable(OnScroll));
             }
             m_PreviewRenderHandle.onPreviewChanged += OnPreviewChanged;
-            Add(middleContainer);
+            Add(m_Preview);
+
+            m_MasterPreviewResizeBorderFrame = new ResizeBorderFrame(this) { name = "resizeBorderFrame" };
+            m_MasterPreviewResizeBorderFrame.stayWithinParentBounds = true;
+            m_MasterPreviewResizeBorderFrame.maintainAspectRatio = true;
+            //m_MasterPreviewResizeBorderFrame.OnResizeFinished += UpdateSerializedWindowLayout;
+            Add(m_MasterPreviewResizeBorderFrame);
+        }
+
+        void UpdateExpandedButtonState()
+        {
+            m_CollapsePreviewButton.RemoveFromClassList(!m_Expanded ? "expanded" : "collapsed");
+            m_CollapsePreviewButton.AddToClassList(!m_Expanded ? "collapsed" : "expanded");
+        }
+
+        void UpdatePreviewVisibility()
+        {
+            if (m_Expanded)
+            {
+                RemoveFromClassList("collapsed");
+                AddToClassList("expanded");
+                m_MasterPreviewResizeBorderFrame.visible = true;
+                SetSize(new Vector2(layout.width, layout.width));
+            }
+            else
+            {
+                m_MasterPreviewResizeBorderFrame.visible = false;
+                SetSize(new Vector2(layout.width, 40));
+                RemoveFromClassList("expanded");
+                AddToClassList("collapsed");
+            }
         }
 
         Image CreatePreview(Texture texture)

@@ -34,6 +34,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         SearchWindowProvider m_SearchWindowProvider;
         EdgeConnectorListener m_EdgeConnectorListener;
         BlackboardProvider m_BlackboardProvider;
+        ResizeBorderFrame m_MasterPreviewResizeBorderFrame;
 
         const string k_FloatingWindowsLayoutKey = "UnityEditor.ShaderGraph.FloatingWindowsLayout";
         FloatingWindowsLayout m_FloatingWindowsLayout;
@@ -51,6 +52,11 @@ namespace UnityEditor.ShaderGraph.Drawing
         public MaterialGraphView graphView
         {
             get { return m_GraphView; }
+        }
+
+        public ResizeBorderFrame reziseBorderFrame
+        {
+            get { return m_MasterPreviewResizeBorderFrame; }
         }
 
         PreviewManager previewManager
@@ -113,22 +119,29 @@ namespace UnityEditor.ShaderGraph.Drawing
                 m_GraphView.Add(m_BlackboardProvider.blackboard);
                 m_BlackboardProvider.blackboard.layout = new Rect(new Vector2(10f, 10f), m_BlackboardProvider.blackboard.layout.size);
 
-                m_MasterPreviewView = new MasterPreviewView(assetName, previewManager, graph) { name = "masterPreview" };
+                //if (graph.GetType() != (typeof(SubGraph)) )
+                //{
+                    m_MasterPreviewView = new MasterPreviewView(assetName, previewManager, graph, this) { name = "masterPreview" };
+                    WindowDraggable masterPreviewViewDraggable = new WindowDraggable();
+                    m_MasterPreviewView.AddManipulator(masterPreviewViewDraggable);
+                    m_GraphView.Add(m_MasterPreviewView);
+/*
+                    m_MasterPreviewResizeBorderFrame = new ResizeBorderFrame(m_MasterPreviewView) { name = "resizeBorderFrame" };
+                    m_MasterPreviewResizeBorderFrame.stayWithinParentBounds = true;
+                    m_MasterPreviewResizeBorderFrame.maintainAspectRatio = true;
+                    m_MasterPreviewResizeBorderFrame.OnResizeFinished += UpdateSerializedWindowLayout;
+                    m_MasterPreviewView.Add(m_MasterPreviewResizeBorderFrame);
+                    masterPreviewViewDraggable.OnDragFinished += UpdateSerializedWindowLayout;
+                    m_MasterPreviewResizeBorderFrame.OnResizeFinished += UpdateSerializedWindowLayout;
+*/
+                //}
 
-                WindowDraggable masterPreviewViewDraggable = new WindowDraggable();
-                m_MasterPreviewView.AddManipulator(masterPreviewViewDraggable);
-                m_GraphView.Add(m_MasterPreviewView);
 
-                ResizeBorderFrame masterPreviewResizeBorderFrame = new ResizeBorderFrame(m_MasterPreviewView) { name = "resizeBorderFrame" };
-                masterPreviewResizeBorderFrame.stayWithinParentBounds = true;
-                masterPreviewResizeBorderFrame.maintainAspectRatio = true;
-                masterPreviewResizeBorderFrame.OnResizeFinished += UpdateSerializedWindowLayout;
-                m_MasterPreviewView.Add(masterPreviewResizeBorderFrame);
+
 
                 m_BlackboardProvider.onDragFinished += UpdateSerializedWindowLayout;
                 m_BlackboardProvider.onResizeFinished += UpdateSerializedWindowLayout;
-                masterPreviewViewDraggable.OnDragFinished += UpdateSerializedWindowLayout;
-                masterPreviewResizeBorderFrame.OnResizeFinished += UpdateSerializedWindowLayout;
+
 
                 m_GraphView.graphViewChanged = GraphViewChanged;
 
@@ -175,6 +188,11 @@ namespace UnityEditor.ShaderGraph.Drawing
                     if(nodeView.node.documentationURL != null)
                         System.Diagnostics.Process.Start(nodeView.node.documentationURL);
                 }
+            }
+            else if (evt.ctrlKey && evt.keyCode == KeyCode.S)
+            {
+                if (saveRequested != null)
+                    saveRequested();
             }
         }
 
@@ -493,7 +511,6 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             string serializedWindowLayout = JsonUtility.ToJson(m_FloatingWindowsLayout);
             EditorUserSettings.SetConfigValue(k_FloatingWindowsLayoutKey, serializedWindowLayout);
-
             m_MasterPreviewView.RefreshRenderTextureSize();
         }
 

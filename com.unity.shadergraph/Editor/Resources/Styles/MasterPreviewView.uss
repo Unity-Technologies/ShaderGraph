@@ -17,6 +17,8 @@ MasterPreviewView {
 }
 
 MasterPreviewView > #top {
+    flex-direction: row;
+    justify-content : space-between;
     background-color: rgb(64, 64, 64);
     padding-top: 8;
     padding-bottom: 8;
@@ -35,6 +37,66 @@ MasterPreviewView > #top > #title {
     padding-right: 2;
 }
 
+MasterPreviewView > #top > #collapse-container {
+    align-self : center;
+	width : 12;
+}
+
+MasterPreviewView > #top > #collapse-container > #icon{
+    align-self: center;
+    background-image : resource("GraphView/Nodes/NodeChevronDown");
+    width: 12;
+    height: 12;
+}
+
+MasterPreviewView > #top > #collapse-container > #icon.expanded {
+    align-self: center;
+    background-image : resource("GraphView/Nodes/NodeChevronDown");
+    width: 12;
+    height: 12;
+}
+
+MasterPreviewView > #top > #collapse-container > #icon.collapsed {
+    align-self: center;
+    background-image : resource("GraphView/Nodes/NodeChevronLeft");
+    width: 12;
+    height: 12;
+}
+
+
+
+
+/* MaterialNodeView > #node-border > #title > #button-container{
+	flex-direction: row;
+	justify-content : space-between;
+}
+
+MaterialNodeView  > #node-border > #title > #button-container > #settings-button{
+	align-self : center;
+	width : 16;
+}
+
+MaterialNodeView  > #node-border > #title > #button-container > #settings-button:hover{
+	background-color: #2B2B2B;
+}
+
+MaterialNodeView  > #node-border > #title > #button-container > #settings-button.clicked{
+	background-color: #2B2B2B;
+}
+
+MaterialNodeView  > #node-border > #title > #button-container > #settings-button > #icon{
+	align-self : center;
+	background-image : resource("GraphView/Nodes/PreviewExpand");
+	width : 16;
+	height : 16;
+} */
+
+
+
+
+
+
+
 MasterPreviewView > #middle {
     flex-grow: 1;
     border-width: 10;
@@ -46,4 +108,18 @@ MasterPreviewView > #middle > #preview {
     flex-grow: 1;
     border-width: 10;
     border-color: rgb(200,10,190);
+}
+
+MasterPreviewView.collapsed{
+    background-color: rgb(206, 53, 185);
+    min-width: 50;
+    min-height: 40;
+    height: 40;
+    width: 50;
+}
+
+MasterPreviewView.expanded{
+    background-color: rgb(206, 53, 185);
+    min-width: 200;
+    min-height: 200;
 }
