@@ -36,10 +36,11 @@ ${VariantDefines}
     #define UNITY_MATERIAL_LIT      // Need to be define before including Material.hlsl
 
     // Use surface gradient normal mapping as it handle correctly triplanar normal mapping and multiple UVSet
-    #define SURFACE_GRADIENT
+    // this modifies the normal calculation
+    // #define SURFACE_GRADIENT
 
     // This shader support vertex modification (or not) TODO - move to PBR shader control
-//    #define HAVE_VERTEX_MODIFICATION
+    // #define HAVE_VERTEX_MODIFICATION
 
     // If we use subsurface scattering, enable output split lighting (for forward pass)
     #if defined(_MATID_SSS) && !defined(_SURFACE_TYPE_TRANSPARENT)
