@@ -47,7 +47,7 @@ namespace UnityEditor.ShaderGraph
             return m_Pragma;
         }
 
-        public void AddShaderChunk(string s, bool unique)
+        public void AddShaderChunk(string s, bool unique = false)
         {
             if (string.IsNullOrEmpty(s))
                 return;
@@ -56,6 +56,14 @@ namespace UnityEditor.ShaderGraph
                 return;
 
             m_ShaderChunks.Add(new ShaderChunk(m_IndentLevel, s));
+        }
+
+        public void AddGenerator(ShaderGenerator generator)
+        {
+            foreach (ShaderChunk chunk in generator.m_ShaderChunks)
+            {
+                m_ShaderChunks.Add(new ShaderChunk(m_IndentLevel + chunk.chunkIndentLevel, chunk.chunkString));
+            }
         }
 
         public void Indent()
@@ -103,6 +111,26 @@ namespace UnityEditor.ShaderGraph
 
             if (File.Exists(result))
                 return result;
+
+            // NOCHECKIN: fix this up... quick hack for working in a sub-asset install -- do we need something like this?
+            var path3 = new List<string>
+            {
+                Application.dataPath,
+                "ShaderGraph",
+                "com.unity.shadergraph",
+                "Editor",
+                "Templates"
+            };
+
+            string result3 = path3[0];
+            for (int i = 1; i < path3.Count; i++)
+                result3 = Path.Combine(result3, path3[i]);
+
+            result3 = Path.Combine(result3, templateName);
+            result3 = Path.GetFullPath(result3);
+
+            if (File.Exists(result3))
+                return result3;
 
             return string.Empty;
         }

@@ -136,16 +136,16 @@ namespace UnityEditor.ShaderGraph
             // we support
             RemoveSlotsNameNotMatching(
                 new[]
-            {
-                AlbedoSlotId,
-                NormalSlotId,
-                EmissionSlotId,
-                model == Model.Metallic ? MetallicSlotId : SpecularSlotId,
-                SmoothnessSlotId,
-                OcclusionSlotId,
-                AlphaSlotId,
-                AlphaThresholdSlotId
-            }, true);
+                {
+                    AlbedoSlotId,
+                    NormalSlotId,
+                    EmissionSlotId,
+                    (model == Model.Metallic) ? MetallicSlotId : SpecularSlotId,
+                    SmoothnessSlotId,
+                    OcclusionSlotId,
+                    AlphaSlotId,
+                    AlphaThresholdSlotId
+                }, true);
         }
 
         public NeededCoordinateSpace RequiresNormal()

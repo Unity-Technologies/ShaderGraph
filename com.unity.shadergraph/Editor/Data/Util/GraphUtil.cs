@@ -5,9 +5,444 @@ using System.Linq;
 using UnityEditor.Graphing;
 using UnityEditor.Graphing.Util;
 using UnityEngine;
+using System.Reflection;
 
 namespace UnityEditor.ShaderGraph
 {
+    // a structure used to track active variable dependencies in the shader code
+    // (i.e. the use of uv0 in the pixel shader means we need a uv0 interpolator, etc.)
+    public struct Dependency
+    {
+        public string name;             // the name of the thing
+        public string dependsOn;        // the thing above depends on this -- it reads it / calls it / requires it to be defined
+
+        public Dependency(string name, string dependsOn)
+        {
+            this.name = name;
+            this.dependsOn = dependsOn;
+        }
+    };
+
+    // attribute used to flag a field as needing an HLSL semantic applied
+    // i.e.    float3 position : POSITION;
+    //                           ^ semantic
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class Semantic : System.Attribute
+    {
+        public string semantic;
+
+        public Semantic(string semantic)
+        {
+            this.semantic = semantic;
+        }
+    }
+
+    // attribute used to flag a field as being optional
+    // i.e. if it is not active, then we can omit it from the struct
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class Optional : System.Attribute
+    {
+        public Optional()
+        {
+        }
+    }
+
+    public static class ShaderSpliceUtil
+    {
+        private static int GetVectorCount(System.Type type)
+        {
+            if (type.Name.Equals("Vector4"))
+            {
+                return 4;
+            }
+            else if (type.Name.Equals("Vector3"))
+            {
+                return 3;
+            }
+            else if (type.Name.Equals("Vector2"))
+            {
+                return 2;
+            }
+            else if (type.Name.Equals("float"))
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        private static string[] vectorTypeNames =
+        {
+            "unknown",
+            "float",
+            "float2",
+            "float3",
+            "float4"
+        };
+
+        private static string ConvertFieldType(System.Type type)
+        {
+            int vectorCount = GetVectorCount(type);
+            return vectorTypeNames[vectorCount];
+        }
+
+        private static char[] channelNames =
+        { 'x', 'y', 'z', 'w' };
+
+        private static string GetChannelSwizzle(int firstChannel, int channelCount)
+        {
+            System.Text.StringBuilder result = new System.Text.StringBuilder();
+            int lastChannel = System.Math.Min(firstChannel + channelCount - 1, 4);
+            for (int index = firstChannel; index <= lastChannel; index++)
+            {
+                result.Append(channelNames[index]);
+            }
+            return result.ToString();
+        }
+
+        public static void BuildType(System.Type t, HashSet<string> activeFields, ShaderGenerator result)
+        {
+            result.AddShaderChunk("struct " + t.Name + " {");
+            result.Indent();
+
+            foreach (FieldInfo field in t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                if (field.MemberType == MemberTypes.Field)
+                {
+                    bool isOptional = field.IsDefined(typeof(Optional), false);
+                    if (isOptional)
+                    {
+                        string fullName = t.Name + "." + field.Name;
+                        if (!activeFields.Contains(fullName))
+                        {
+                            // not active, skip the optional field
+                            continue;
+                        }
+                    }
+
+                    string semanticString = string.Empty;
+                    object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
+                    if (semantics.Length > 0)
+                    {
+                        Semantic first = (Semantic)semantics[0];
+                        semanticString = " : " + first.semantic;
+                    }
+
+                    string fieldDecl = ConvertFieldType(field.FieldType) + " " + field.Name + semanticString + ";" + (isOptional ? " // optional" : string.Empty);
+
+                    result.AddShaderChunk(fieldDecl);
+                }
+            }
+            result.Deindent();
+            result.AddShaderChunk("};");
+        }
+
+        public static void BuildPackedType(System.Type unpacked, HashSet<string> activeFields, ShaderGenerator result)
+        {
+            // for each interpolator, the number of components used (up to 4 for a float4 interpolator)
+            List<int> packedCounts = new List<int>();
+            ShaderGenerator packer = new ShaderGenerator();
+            ShaderGenerator unpacker = new ShaderGenerator();
+
+            string unpackedStruct = unpacked.Name.ToString();
+            string packedStruct = "Packed" + unpacked.Name;
+            string packerFunction = "Pack" + unpacked.Name;
+            string unpackerFunction = "Unpack" + unpacked.Name;
+
+            // declare struct header:
+            //   struct packedStruct {
+            result.AddShaderChunk("struct " + packedStruct + " {");
+            result.Indent();
+
+            // declare function headers:
+            //   packedStruct packerFunction(unpackedStruct input)
+            //   {
+            //      packedStruct output;
+            packer.AddShaderChunk(packedStruct + " " + packerFunction + "(" + unpackedStruct + " input)");
+            packer.AddShaderChunk("{");
+            packer.Indent();
+            packer.AddShaderChunk(packedStruct + " output;");
+
+            //   unpackedStruct unpackerFunction(packedStruct input)
+            //   {
+            //      unpackedStruct output;
+            unpacker.AddShaderChunk(unpackedStruct + " " + unpackerFunction + "(" + packedStruct + " input)");
+            unpacker.AddShaderChunk("{");
+            unpacker.Indent();
+            unpacker.AddShaderChunk(unpackedStruct + " output;");
+
+            // TODO: this could do a better job packing
+            // especially if we allowed breaking up fields to pack them into remaining space...
+            // (though we would want to minimize the use of it -- only if it improves final interpolator count, and is worth it on the target machine)
+            foreach (FieldInfo field in unpacked.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                if (field.MemberType == MemberTypes.Field)
+                {
+                    bool isOptional = field.IsDefined(typeof(Optional), false);
+                    if (isOptional)
+                    {
+                        string fullName = unpacked.Name + "." + field.Name;
+                        if (!activeFields.Contains(fullName))
+                        {
+                            // not active, skip the optional field
+                            continue;
+                        }
+                    }
+
+                    Semantic semantic = null;
+                    object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
+                    if (semantics.Length > 0)
+                    {
+                        semantic = (Semantic)semantics[0];
+                    }
+
+                    if (semantic != null)
+                    {
+                        // not a packed value -- has an explicit bound semantic -- copy values directly through
+                        int vectorCount = GetVectorCount(field.FieldType);
+                        result.AddShaderChunk(vectorTypeNames[vectorCount] + " " + field.Name + " : " + semantic.semantic + "; // unpacked (explicit semantic)");
+                        packer.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
+                        unpacker.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
+                    }
+                    else
+                    {
+                        // pack field
+                        int vectorCount = GetVectorCount(field.FieldType);
+                        int interpIndex = packedCounts.FindIndex(x => (x + vectorCount <= 4));      // super simple packing: first slot that fits the whole value
+                        int firstChannel;
+                        if (interpIndex < 0)
+                        {
+                            // allocate a new interpolator
+                            interpIndex = packedCounts.Count;
+                            firstChannel = 0;
+                            packedCounts.Add(vectorCount);
+                        }
+                        else
+                        {
+                            // pack into existing interpolator
+                            firstChannel = packedCounts[interpIndex];
+                            packedCounts[interpIndex] += vectorCount;
+                        }
+
+                        // add code to packer and unpacker
+                        string packedChannels = GetChannelSwizzle(firstChannel, vectorCount);
+                        packer.AddShaderChunk(string.Format("output.interp{0:00}.{1} = input.{2};", interpIndex, packedChannels, field.Name));
+                        unpacker.AddShaderChunk(string.Format("output.{0} = input.interp{1:00}.{2};", field.Name, interpIndex, packedChannels));
+                    }
+                }
+            }
+
+            // create packed structure from packedCounts
+            for (int index = 0; index < packedCounts.Count; index++)
+            {
+                int count = packedCounts[index];
+                result.AddShaderChunk(string.Format("{0} interp{1:00} : TEXCOORD{1}; // auto-packed", vectorTypeNames[count], index));
+            }
+
+            // close declarations
+            result.Deindent();
+            result.AddShaderChunk("};");
+            packer.AddShaderChunk("return output;");
+            packer.Deindent();
+            packer.AddShaderChunk("}");
+            unpacker.AddShaderChunk("return output;");
+            unpacker.Deindent();
+            unpacker.AddShaderChunk("}");
+
+            // combine all of the code
+            result.AddGenerator(packer);
+            result.AddGenerator(unpacker);
+        }
+
+        // an easier to use version of substring Append() -- explicit inclusion on each end, and checks for positive length
+        private static void AppendSubstring(System.Text.StringBuilder target, string str, int start, bool includeStart, int end, bool includeEnd)
+        {
+            if (!includeStart)
+            {
+                start++;
+            }
+            if (!includeEnd)
+            {
+                end--;
+            }
+            int count = end - start + 1;
+            if (count > 0)
+            {
+                target.Append(str, start, count);
+            }
+        }
+
+        public static System.Text.StringBuilder PreprocessShaderCode(string code, HashSet<string> activeFields, Dictionary<string, string> namedFragments = null, System.Text.StringBuilder result = null)
+        {
+            if (result == null)
+            {
+                result = new System.Text.StringBuilder();
+            }
+            int cur = 0;
+            int end = code.Length;
+
+            while (cur < end)
+            {
+                int dollar = code.IndexOf('$', cur);
+                if (dollar < 0)
+                {
+                    // no escape sequence found -- just append the remaining part of the code verbatim
+                    AppendSubstring(result, code, cur, true, end, false);
+                    cur = end;
+                }
+                else
+                {
+                    // found $ escape sequence
+
+                    // first append everything before the beginning of the escape sequence
+                    AppendSubstring(result, code, cur, true, dollar, false);
+
+                    // next find the end of the line (or if none found, the end of the code)
+                    int endln = code.IndexOf('\n', dollar + 1);
+                    if (endln < 0)
+                    {
+                        endln = end;
+                    }
+
+                    // see if the character after '$' is '{', which would indicate a named fragment splice
+                    if ((dollar + 1 < endln) && (code[dollar + 1] == '{'))
+                    {
+                        // named fragment splice
+                        // search for the '}' within the current line
+                        int curlystart = dollar + 1;
+                        int curlyend = -1;
+                        if (endln > curlystart + 1)
+                        {
+                            curlyend = code.IndexOf('}', curlystart + 1, endln - curlystart - 1);
+                        }
+
+                        int nameLength = curlyend - dollar + 1;
+                        if ((curlyend < 0) || (nameLength <= 0))
+                        {
+                            // no } found, or zero length name
+                            if (curlyend < 0)
+                            {
+                                result.Append("// ERROR: unterminated escape sequence ('${' and '}' must be matched)\n");
+                            }
+                            else
+                            {
+                                result.Append("// ERROR: name '${}' is empty\n");
+                            }
+
+                            // append the line (commented out) for context
+                            result.Append("//    ");
+                            AppendSubstring(result, code, dollar, true, endln, false);
+                            result.Append("\n");
+                        }
+                        else
+                        {
+                            // } found!
+                            // ugh, this probably allocates memory -- wish we could do the name lookup direct from a substring
+                            string name = code.Substring(dollar, nameLength);
+
+                            string fragment;
+                            if ((namedFragments != null) && namedFragments.TryGetValue(name, out fragment))
+                            {
+                                // splice the fragment
+                                result.Append(fragment);
+                                // advance to just after the '}'
+                                cur = curlyend + 1;
+                            }
+                            else
+                            {
+                                // no named fragment found
+                                result.AppendFormat("/* Could not find named fragment '{0}' */", name);
+                                cur = curlyend + 1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // it's a predicate
+                        // search for the colon within the current line
+                        int colon = -1;
+                        if (endln > dollar + 1)
+                        {
+                            colon = code.IndexOf(':', dollar + 1, endln - dollar - 1);
+                        }
+
+                        int predicateLength = colon - dollar - 1;
+                        if ((colon < 0) || (predicateLength <= 0))
+                        {
+                            // no colon found... error!  Spit out error and context
+                            if (colon < 0)
+                            {
+                                result.Append("// ERROR: unterminated escape sequence ('$' and ':' must be matched)\n");
+                            }
+                            else
+                            {
+                                result.Append("// ERROR: predicate is zero length\n");
+                            }
+
+                            // append the line (commented out) for context
+                            result.Append("//    ");
+                            AppendSubstring(result, code, dollar, true, endln, false);
+                        }
+                        else
+                        {
+                            // colon found!
+                            // ugh, this probably allocates memory -- wish we could do the field lookup direct from a substring
+                            string predicate = code.Substring(dollar + 1, predicateLength);
+
+                            if (activeFields.Contains(predicate))
+                            {
+                                // predicate is active, append the line
+                                result.Append(' ', predicateLength + 2);
+                                AppendSubstring(result, code, colon, false, endln, false);
+                            }
+                            else
+                            {
+                                // predicate is not active -- comment out line
+                                result.Append("//");
+                                result.Append(' ', predicateLength);
+                                AppendSubstring(result, code, colon, false, endln, false);
+                            }
+                        }
+                        cur = endln + 1;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public static void ApplyDependencies(HashSet<string> activeFields, List<Dependency[]> dependsList)
+        {
+            // add active fields to queue
+            Queue<string> fieldsToPropagate = new Queue<string>();
+            foreach (string f in activeFields)
+            {
+                fieldsToPropagate.Enqueue(f);
+            }
+
+            // foreach field in queue:
+            while (fieldsToPropagate.Count > 0)
+            {
+                string field = fieldsToPropagate.Dequeue();
+                if (activeFields.Contains(field))           // this should always be true
+                {
+                    // find all dependencies of field that are not already active
+                    foreach (Dependency[] dependArray in dependsList)
+                    {
+                        foreach (Dependency d in dependArray.Where(d => (d.name == field) && !activeFields.Contains(d.dependsOn)))
+                        {
+                            // activate them and add them to the queue
+                            activeFields.Add(d.dependsOn);
+                            fieldsToPropagate.Enqueue(d.dependsOn);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     public static class GraphUtil
     {
         internal static string ConvertCamelCase(string text, bool preserveAcronyms)
@@ -208,9 +643,9 @@ namespace UnityEditor.ShaderGraph
             return results;
         }
 
-        public static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster)
+        public static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster, string structName = "SurfaceDescription")
         {
-            surfaceDescriptionStruct.AddShaderChunk("struct SurfaceDescription{", false);
+            surfaceDescriptionStruct.AddShaderChunk(String.Format("struct {0}{{", structName), false);
             surfaceDescriptionStruct.Indent();
             if (isMaster)
             {
@@ -238,12 +673,13 @@ namespace UnityEditor.ShaderGraph
             string functionName = "PopulateSurfaceData",
             string surfaceDescriptionName = "SurfaceDescription",
             Vector1ShaderProperty outputIdProperty = null,
-            IEnumerable<MaterialSlot> slots = null)
+            IEnumerable<MaterialSlot> slots = null,
+            string graphInputStructName = "SurfaceInputs")
         {
             if (graph == null)
                 return;
 
-            surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} {1}(SurfaceInputs IN) {{", surfaceDescriptionName, functionName), false);
+            surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} {1}({2} IN) {{", surfaceDescriptionName, functionName, graphInputStructName), false);
             surfaceDescriptionFunction.Indent();
             surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} surface = ({0})0;", surfaceDescriptionName), false);
 
