@@ -226,6 +226,7 @@ namespace UnityEditor.ShaderGraph
             ShaderGenerator codeResult,
             ShaderGraphRequirements graphRequirements,
             ShaderGraphRequirements modelRequirements,
+            List<string> passRequiredFields,            // fields the pass requires
             CoordinateSpace preferedCoordinateSpace,
             out HashSet<string> activeFields)
         {
@@ -237,6 +238,13 @@ namespace UnityEditor.ShaderGraph
             activeFields = new HashSet<string>();
             AddActiveFieldsFromGraphRequirements(activeFields, graphRequirements);
             AddActiveFieldsFromModelRequirements(activeFields, modelRequirements);
+            if (passRequiredFields != null)
+            {
+                foreach (var requiredField in passRequiredFields)
+                {
+                    activeFields.Add(requiredField);
+                }
+            }
 
             // propagate requirements using dependencies
             {

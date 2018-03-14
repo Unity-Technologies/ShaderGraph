@@ -28,6 +28,7 @@ namespace UnityEditor.ShaderGraph
             public string ZWriteOverride;
             public string ColorMaskOverride;
             public List<string> StencilOverride;
+            public List<string> RequiredFields;         // feeds into the dependency analysis
         }
 
         Pass m_PassGBuffer = new Pass()
@@ -127,6 +128,15 @@ namespace UnityEditor.ShaderGraph
             Includes = new List<string>()
             {
                 "#include \"HDRP/ShaderPass/ShaderPassLightTransport.hlsl\"",
+            },
+            RequiredFields = new List<string>()
+            {
+                "AttributesMesh.normalOS",
+                "AttributesMesh.tangentOS",     // Always present as we require it also in case of anisotropic lighting
+                "AttributesMesh.uv0",
+                "AttributesMesh.uv1",
+                "AttributesMesh.color",
+                "AttributesMesh.uv2",           // SHADERPASS_LIGHT_TRANSPORT always uses uv2
             },
             PixelShaderSlots = new List<int>()
             {
@@ -726,6 +736,7 @@ namespace UnityEditor.ShaderGraph
                 packedInterpolatorCode,
                 graphRequirements,
                 modelRequirements,
+                pass.RequiredFields,
                 CoordinateSpace.World,
                 out activeFields);
 
