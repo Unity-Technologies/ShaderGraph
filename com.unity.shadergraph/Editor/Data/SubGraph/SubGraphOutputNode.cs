@@ -61,11 +61,6 @@ namespace UnityEditor.ShaderGraph
             get { return true; }
         }
 
-        public override PreviewMode previewMode
-        {
-            get { return PreviewMode.Preview3D; }
-        }
-
         public virtual int AddSlot()
         {
             var index = this.GetInputSlots<ISlot>().Count() + 1;
