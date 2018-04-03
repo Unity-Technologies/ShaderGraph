@@ -164,8 +164,7 @@ ${InterpolatorPacking}
             $GraphInputs.WorldSpaceViewDirection:   output.WorldSpaceViewDirection =     normalize(viewWS);
             $GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS;
             
-            $GraphInputs.TangentSpaceNormal:        float3x3 tangentSpaceTransform = float3x3(input.worldToTangent[0].xyz, input.worldToTangent[1].xyz, output.WorldSpaceNormal);
-			$GraphInputs.TangentSpaceNormal:        output.TangentSpaceNormal = mul(tangentSpaceTransform, output.WorldSpaceNormal);
+			$GraphInputs.TangentSpaceNormal:        output.TangentSpaceNormal =          float3(0.0f, 0.0f, 1.0f);
 
             $GraphInputs.screenPosition:            output.screenPosition = input.positionSS;
             
