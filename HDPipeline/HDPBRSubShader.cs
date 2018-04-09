@@ -169,13 +169,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,          // TODO: remove all but the alpha below
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -194,13 +187,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,          // TODO: remove all but the alpha below
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -218,13 +204,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             },
@@ -257,13 +236,13 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,
+//                 PBRMasterNode.AlbedoSlotId,
+//                 PBRMasterNode.NormalSlotId,
+//                 PBRMasterNode.MetallicSlotId,
+//                 PBRMasterNode.SpecularSlotId,
+//                 PBRMasterNode.EmissionSlotId,
+//                 PBRMasterNode.SmoothnessSlotId,
+//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -286,13 +265,13 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,
+//                 PBRMasterNode.AlbedoSlotId,
+//                 PBRMasterNode.NormalSlotId,
+//                 PBRMasterNode.MetallicSlotId,
+//                 PBRMasterNode.SpecularSlotId,
+//                 PBRMasterNode.EmissionSlotId,
+//                 PBRMasterNode.SmoothnessSlotId,
+//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -395,13 +374,13 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-                PBRMasterNode.AlbedoSlotId,
-                PBRMasterNode.NormalSlotId,
-                PBRMasterNode.MetallicSlotId,
-                PBRMasterNode.SpecularSlotId,
-                PBRMasterNode.EmissionSlotId,
-                PBRMasterNode.SmoothnessSlotId,
-                PBRMasterNode.OcclusionSlotId,
+//                 PBRMasterNode.AlbedoSlotId,
+//                 PBRMasterNode.NormalSlotId,
+//                 PBRMasterNode.MetallicSlotId,
+//                 PBRMasterNode.SpecularSlotId,
+//                 PBRMasterNode.EmissionSlotId,
+//                 PBRMasterNode.SmoothnessSlotId,
+//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -435,12 +414,6 @@ namespace UnityEditor.ShaderGraph
             {
                 defines.AddShaderChunk("#define _ALPHATEST_ON 1", true);
             }
-
-            // #pragma shader_feature _DOUBLESIDED_ON
-            //             if (kDoubleSidedEnable)
-            //             {
-            //                 defines.AddShaderChunk("#define _DOUBLESIDED_ON 1", true);
-            //             }
 
 //             if (kTesselationMode != TessellationMode.None)
 //             {
@@ -619,7 +592,9 @@ namespace UnityEditor.ShaderGraph
                     usedSlots.Add(slot);
                 }
             }
-            GraphUtil.GenerateSurfaceDescriptionStruct(graphOutputs, slots, true, "GraphOutputs");
+
+            HashSet<string> activeFields = new HashSet<string>();
+            GraphUtil.GenerateSurfaceDescriptionStruct(graphOutputs, slots, true, "GraphOutputs", activeFields);
 
             GraphUtil.GenerateSurfaceDescription(
                 activeNodeList,
@@ -641,9 +616,9 @@ namespace UnityEditor.ShaderGraph
             graph.AddShaderChunk(nodeFunctions.ToString(), false);
 
             graph.AddShaderChunk("// Graph Inputs", false);
-            graph.AddShaderChunk(graphInputs.GetShaderString(2), false);
+            graph.AddGenerator(graphInputs);
             graph.AddShaderChunk("// Graph Outputs", false);
-            graph.AddShaderChunk(graphOutputs.GetShaderString(2), false);
+            graph.AddGenerator(graphOutputs);
             graph.AddShaderChunk("// ShaderGraph Properties", false);
             graph.AddShaderChunk(shaderProperties.GetPropertiesDeclaration(2), false);
 
@@ -730,7 +705,17 @@ namespace UnityEditor.ShaderGraph
                 modelRequirements,
                 CoordinateSpace.World);
 
-            HashSet<string> activeFields;
+            if (masterNode.twoSided.isOn)
+            {
+                activeFields.Add("DoubleSided");
+                if (pass.ShaderPassName != "SHADERPASS_VELOCITY")   // HACK to get around lack of a good interpolator dependency system
+                {                                                   // we need to be able to build interpolators using multiple input structs
+                                                                    // also: should only require isFrontFace if Normals are required...
+                    activeFields.Add("DoubleSided.Mirror");         // TODO: change this depending on what kind of normal flip you want..
+                    activeFields.Add("FragInputs.isFrontFace");     // will need this for determining normal flip mode
+                }
+            }
+
             HDRPShaderStructs.Generate(
                 interpolatorDefines,
                 packedInterpolatorCode,
@@ -738,7 +723,16 @@ namespace UnityEditor.ShaderGraph
                 modelRequirements,
                 pass.RequiredFields,
                 CoordinateSpace.World,
-                out activeFields);
+                activeFields);
+
+            // debug output all active fields
+            {
+                interpolatorDefines.AddShaderChunk("// ACTIVE FIELDS:", false);
+                foreach (string f in activeFields)
+                {
+                    interpolatorDefines.AddShaderChunk("// " + f, false);
+                }
+            }
 
             ShaderGenerator defines = new ShaderGenerator();
             {
@@ -819,7 +813,6 @@ namespace UnityEditor.ShaderGraph
                 {
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
                     materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
-                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
                     materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
@@ -832,7 +825,6 @@ namespace UnityEditor.ShaderGraph
                         case AlphaMode.Alpha:
                             materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
                             materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
-                            materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
                             materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
                             materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                             materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
@@ -841,7 +833,6 @@ namespace UnityEditor.ShaderGraph
                         case AlphaMode.Additive:
                             materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
                             materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
-                            materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
                             materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
                             materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
                             materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
@@ -850,6 +841,8 @@ namespace UnityEditor.ShaderGraph
                         // TODO: other blend modes
                     }
                 }
+
+                materialOptions.cullMode = masterNode.twoSided.isOn ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
 
                 // Add tags at the SubShader level
                 {

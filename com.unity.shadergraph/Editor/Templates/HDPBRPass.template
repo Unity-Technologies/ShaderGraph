@@ -64,7 +64,7 @@ ${VariantDefines}
     //-------------------------------------------------------------------------------------
 ${Defines}
 
-    // this translates the new dependency tracker into the old preprocessor definitions for the existing shader code
+    // this translates the new dependency tracker into the old preprocessor definitions for the existing HDRP shader code
     $AttributesMesh.normalOS:               #define ATTRIBUTES_NEED_NORMAL
     $AttributesMesh.tangentOS:              #define ATTRIBUTES_NEED_TANGENT
     $AttributesMesh.uv0:                    #define ATTRIBUTES_NEED_TEXCOORD0
@@ -79,6 +79,7 @@ ${Defines}
     $VaryingsMeshToPS.texCoord2:            #define VARYINGS_NEED_TEXCOORD2
     $VaryingsMeshToPS.texCoord3:            #define VARYINGS_NEED_TEXCOORD3
     $VaryingsMeshToPS.color:                #define VARYINGS_NEED_COLOR
+    $VaryingsMeshToPS.cullFace:             #define VARYINGS_NEED_CULLFACE
 
     //-------------------------------------------------------------------------------------
     // End Defines
@@ -145,10 +146,12 @@ ${InterpolatorPacking}
             $FragInputs.texCoord2:          output.texCoord2 = input.texCoord2;
             $FragInputs.texCoord3:          output.texCoord3 = input.texCoord3;
             $FragInputs.color:              output.color = input.color;
+            #if SHADER_STAGE_FRAGMENT
             $FragInputs.isFrontFace:        output.isFrontFace = IS_FRONT_VFACE(input.cullFace, true, false);       // TODO: SHADER_STAGE_FRAGMENT only
             $FragInputs.isFrontFace:        // Handle handness of the view matrix (In Unity view matrix default to a determinant of -1)
             $FragInputs.isFrontFace:        // when we render a cubemap the view matrix handness is flipped (due to convention used for cubemap) we have a determinant of +1
             $FragInputs.isFrontFace:        output.isFrontFace = _ViewParam.x <  0.0 ? output.isFrontFace : !output.isFrontFace;
+            #endif // SHADER_STAGE_FRAGMENT
 
             return output;
         }
@@ -195,13 +198,19 @@ ${Graph}
 
     void BuildSurfaceData(FragInputs fragInputs, GraphOutputs graphOutputs, float3 V, out SurfaceData surfaceData)
     {
-        surfaceData.baseColor =				graphOutputs.Albedo;
-		surfaceData.perceptualSmoothness =  graphOutputs.Smoothness;
-		surfaceData.ambientOcclusion =      1.0f;                       // graphOutputs.AmbientOcclusion
-		surfaceData.metallic =				graphOutputs.Metallic;
-		surfaceData.thickness =             0.0f;                       // graphOutputs.Thickness
-		surfaceData.diffusionProfile =      0;                          // graphOutputs.DiffusionProfile
-        surfaceData.subsurfaceMask =        1.0f;                       // graphOutputs.SubsurfaceMask
+        // setup defaults -- these are used if the graph doesn't output a value
+        ZERO_INITIALIZE(SurfaceData, surfaceData);
+        surfaceData.ambientOcclusion =      1.0f;
+        surfaceData.subsurfaceMask =        1.0f;
+
+        // copy across graph values, if defined
+        $GraphOutputs.Albedo:               surfaceData.baseColor =				graphOutputs.Albedo;
+        $GraphOutputs.Smoothness:           surfaceData.perceptualSmoothness =  graphOutputs.Smoothness;
+//		                                    surfaceData.ambientOcclusion =      graphOutputs.AmbientOcclusion;
+		$GraphOutputs.Metallic:            surfaceData.metallic =				graphOutputs.Metallic;
+//                                  		surfaceData.thickness =             graphOutputs.Thickness
+//		                                    surfaceData.diffusionProfile =      graphOutputs.DiffusionProfile
+//                                          surfaceData.subsurfaceMask =        graphOutputs.SubsurfaceMask
 
         // These static material feature allow compile time optimization
         surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
@@ -225,7 +234,8 @@ ${Graph}
 #endif
 
         // tangent-space normal
-        float3 normalTS =                   graphOutputs.Normal;
+        float3 normalTS =                   float3(0.0f, 0.0f, 1.0f);
+        $GraphOutputs.Normal:       normalTS =                   graphOutputs.Normal;
 
         // compute world space normal
         GetNormalWS(fragInputs, V, normalTS, surfaceData.normalWS);
@@ -261,26 +271,14 @@ ${Graph}
 
     void GetSurfaceAndBuiltinData(FragInputs fragInputs, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
     {
-/*
-        //-------------------------------------------------------------------------------------
-        // Local Pixel Shader Code - Deprecated
-        //-------------------------------------------------------------------------------------
-${LocalPixelShader}
-        //-------------------------------------------------------------------------------------
-        // End Local Pixel Shader Code
-        //-------------------------------------------------------------------------------------
+        // this applies the double sided tangent space correction -- see 'ApplyDoubleSidedFlipOrMirror()'
+        $DoubleSided:           if (!fragInputs.isFrontFace) {
+        $DoubleSided.Flip:          fragInputs.worldToTangent[1] = -fragInputs.worldToTangent[1];     // bitangent
+        $DoubleSided.Flip:          fragInputs.worldToTangent[2] = -fragInputs.worldToTangent[2];     // normal
+        $DoubleSided.Mirror:        fragInputs.worldToTangent[2] = -fragInputs.worldToTangent[2];     // normal
+        $DoubleSided:           }
 
-        SurfaceInputs surfaceInput;
-        //-------------------------------------------------------------------------------------
-        // Surface Inputs Population Code - Deprecated
-        //-------------------------------------------------------------------------------------
-${SurfaceInputs}
-        //-------------------------------------------------------------------------------------
-        // End Surface Inputs Population Code
-        //-------------------------------------------------------------------------------------
-*/
         GraphInputs graphInputs = FragInputsToGraphInputs(fragInputs, V);
-
         GraphOutputs graphOutputs = EvaluateGraph(graphInputs);
 
         // Perform alpha test very early to save performance (a killed pixel will not sample textures)
@@ -294,6 +292,7 @@ ${SurfaceInputs}
         // Builtin Data -- we don't call GetBuiltinData(fragInputs, surfaceData, ...)
         // that function assumes there are specific global properties defined
         // for shadergraph shaders, we fill it out here instead
+        ZERO_INITIALIZE(BuiltinData, builtinData);
         float3 bentNormalWS =                   surfaceData.normalWS;           // TODO : make bent normals work
 
         builtinData.opacity =                   graphOutputs.Alpha;
@@ -312,7 +311,7 @@ ${SurfaceInputs}
         }
 
         builtinData.emissiveIntensity =         1.0f;
-        builtinData.emissiveColor =             graphOutputs.Emission;
+$GraphOutputs.Emission:     builtinData.emissiveColor =             graphOutputs.Emission;
         builtinData.velocity =                  float2(0.0, 0.0);
 #ifdef SHADOWS_SHADOWMASK
         float4 shadowMask = SampleShadowMask(fragInputs.positionWS, fragInputs.texCoord1);

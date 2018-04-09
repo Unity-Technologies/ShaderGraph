@@ -47,23 +47,47 @@ namespace UnityEditor.ShaderGraph
         }
     }
 
+    // attribute used to override the HLSL type of a field with a custom type string
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class OverrideType : System.Attribute
+    {
+        public string typeName;
+
+        public OverrideType(string typeName)
+        {
+            this.typeName = typeName;
+        }
+    }
+
+    // attribute used to disable a field using a preprocessor #if
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class PreprocessorIf : System.Attribute
+    {
+        public string conditional;
+
+        public PreprocessorIf(string conditional)
+        {
+            this.conditional = conditional;
+        }
+    }
+
     public static class ShaderSpliceUtil
     {
-        private static int GetVectorCount(System.Type type)
+        private static int GetFloatVectorCount(string typeName)
         {
-            if (type.Name.Equals("Vector4"))
+            if (typeName.Equals("Vector4"))
             {
                 return 4;
             }
-            else if (type.Name.Equals("Vector3"))
+            else if (typeName.Equals("Vector3"))
             {
                 return 3;
             }
-            else if (type.Name.Equals("Vector2"))
+            else if (typeName.Equals("Vector2"))
             {
                 return 2;
             }
-            else if (type.Name.Equals("float"))
+            else if (typeName.Equals("float"))
             {
                 return 1;
             }
@@ -82,12 +106,6 @@ namespace UnityEditor.ShaderGraph
             "float4"
         };
 
-        private static string ConvertFieldType(System.Type type)
-        {
-            int vectorCount = GetVectorCount(type);
-            return vectorTypeNames[vectorCount];
-        }
-
         private static char[] channelNames =
         { 'x', 'y', 'z', 'w' };
 
@@ -102,6 +120,67 @@ namespace UnityEditor.ShaderGraph
             return result.ToString();
         }
 
+        private static bool ShouldSpliceField(System.Type parentType, FieldInfo field, HashSet<string> activeFields, out bool isOptional)
+        {
+            bool fieldActive = true;
+            isOptional = field.IsDefined(typeof(Optional), false);
+            if (isOptional)
+            {
+                string fullName = parentType.Name + "." + field.Name;
+                if (!activeFields.Contains(fullName))
+                {
+                    // not active, skip the optional field
+                    fieldActive = false;
+                }
+            }
+            return fieldActive;
+        }
+
+        private static string GetFieldSemantic(FieldInfo field)
+        {
+            string semanticString = null;
+            object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
+            if (semantics.Length > 0)
+            {
+                Semantic firstSemantic = (Semantic) semantics[0];
+                semanticString = " : " + firstSemantic.semantic;
+            }
+            return semanticString;
+        }
+
+        private static string GetFieldType(FieldInfo field, out int floatVectorCount)
+        {
+            string fieldType;
+            object[] overrideType = field.GetCustomAttributes(typeof(OverrideType), false);
+            if (overrideType.Length > 0)
+            {
+                OverrideType first = (OverrideType)overrideType[0];
+                fieldType = first.typeName;
+                floatVectorCount = 0;
+            }
+            else
+            {
+                // TODO: handle non-float types
+                floatVectorCount = GetFloatVectorCount(field.FieldType.Name);
+                fieldType = vectorTypeNames[floatVectorCount];
+            }
+            return fieldType;
+        }
+        private static bool IsFloatVectorType(string type)
+        {
+            return GetFloatVectorCount(type) != 0;
+        }
+        private static string GetFieldConditional(FieldInfo field)
+        {
+            string conditional = null;
+            object[] overrideType = field.GetCustomAttributes(typeof(PreprocessorIf), false);
+            if (overrideType.Length > 0)
+            {
+                PreprocessorIf first = (PreprocessorIf) overrideType[0];
+                conditional = first.conditional;
+            }
+            return conditional;
+        }
         public static void BuildType(System.Type t, HashSet<string> activeFields, ShaderGenerator result)
         {
             result.AddShaderChunk("struct " + t.Name + " {");
@@ -111,28 +190,25 @@ namespace UnityEditor.ShaderGraph
             {
                 if (field.MemberType == MemberTypes.Field)
                 {
-                    bool isOptional = field.IsDefined(typeof(Optional), false);
-                    if (isOptional)
+                    bool isOptional;
+                    if (ShouldSpliceField(t, field, activeFields, out isOptional))
                     {
-                        string fullName = t.Name + "." + field.Name;
-                        if (!activeFields.Contains(fullName))
+                        string semanticString = GetFieldSemantic(field);
+                        int floatVectorCount;
+                        string fieldType = GetFieldType(field, out floatVectorCount);
+                        string conditional = GetFieldConditional(field);
+
+                        if (conditional != null)
                         {
-                            // not active, skip the optional field
-                            continue;
+                            result.AddShaderChunk("#if " + conditional);
+                        }
+                        string fieldDecl = fieldType + " " + field.Name + semanticString + ";" + (isOptional ? " // optional" : string.Empty);
+                        result.AddShaderChunk(fieldDecl);
+                        if (conditional != null)
+                        {
+                            result.AddShaderChunk("#endif // " + conditional);
                         }
                     }
-
-                    string semanticString = string.Empty;
-                    object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
-                    if (semantics.Length > 0)
-                    {
-                        Semantic first = (Semantic)semantics[0];
-                        semanticString = " : " + first.semantic;
-                    }
-
-                    string fieldDecl = ConvertFieldType(field.FieldType) + " " + field.Name + semanticString + ";" + (isOptional ? " // optional" : string.Empty);
-
-                    result.AddShaderChunk(fieldDecl);
                 }
             }
             result.Deindent();
@@ -145,6 +221,7 @@ namespace UnityEditor.ShaderGraph
             List<int> packedCounts = new List<int>();
             ShaderGenerator packer = new ShaderGenerator();
             ShaderGenerator unpacker = new ShaderGenerator();
+            ShaderGenerator structEnd = new ShaderGenerator();
 
             string unpackedStruct = unpacked.Name.ToString();
             string packedStruct = "Packed" + unpacked.Name;
@@ -174,72 +251,78 @@ namespace UnityEditor.ShaderGraph
             unpacker.AddShaderChunk(unpackedStruct + " output;");
 
             // TODO: this could do a better job packing
-            // especially if we allowed breaking up fields to pack them into remaining space...
-            // (though we would want to minimize the use of it -- only if it improves final interpolator count, and is worth it on the target machine)
+            // especially if we allowed breaking up fields across multiple interpolators (to pack them into remaining space...)
+            // though we would want to only do this if it improves final interpolator count, and is worth it on the target machine
             foreach (FieldInfo field in unpacked.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 if (field.MemberType == MemberTypes.Field)
                 {
-                    bool isOptional = field.IsDefined(typeof(Optional), false);
-                    if (isOptional)
+                    bool isOptional;
+                    if (ShouldSpliceField(unpacked, field, activeFields, out isOptional))
                     {
-                        string fullName = unpacked.Name + "." + field.Name;
-                        if (!activeFields.Contains(fullName))
-                        {
-                            // not active, skip the optional field
-                            continue;
-                        }
-                    }
+                        string semanticString = GetFieldSemantic(field);
+                        int floatVectorCount;
+                        string fieldType = GetFieldType(field, out floatVectorCount);
+                        string conditional = GetFieldConditional(field);
 
-                    Semantic semantic = null;
-                    object[] semantics = field.GetCustomAttributes(typeof(Semantic), false);
-                    if (semantics.Length > 0)
-                    {
-                        semantic = (Semantic)semantics[0];
-                    }
-
-                    if (semantic != null)
-                    {
-                        // not a packed value -- has an explicit bound semantic -- copy values directly through
-                        int vectorCount = GetVectorCount(field.FieldType);
-                        result.AddShaderChunk(vectorTypeNames[vectorCount] + " " + field.Name + " : " + semantic.semantic + "; // unpacked (explicit semantic)");
-                        packer.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
-                        unpacker.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
-                    }
-                    else
-                    {
-                        // pack field
-                        int vectorCount = GetVectorCount(field.FieldType);
-                        int interpIndex = packedCounts.FindIndex(x => (x + vectorCount <= 4));      // super simple packing: first slot that fits the whole value
-                        int firstChannel;
-                        if (interpIndex < 0)
+                        if ((semanticString != null) || (conditional != null) || (floatVectorCount == 0))
                         {
-                            // allocate a new interpolator
-                            interpIndex = packedCounts.Count;
-                            firstChannel = 0;
-                            packedCounts.Add(vectorCount);
+                            // not a packed value
+                            if (conditional != null)
+                            {
+                                structEnd.AddShaderChunk("#if " + conditional);
+                                packer.AddShaderChunk("#if " + conditional);
+                                unpacker.AddShaderChunk("#if " + conditional);
+                            }
+                            structEnd.AddShaderChunk(fieldType + " " + field.Name + semanticString + "; // unpacked");
+                            packer.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
+                            unpacker.AddShaderChunk("output." + field.Name + " = input." + field.Name + ";");
+                            if (conditional != null)
+                            {
+                                structEnd.AddShaderChunk("#endif // " + conditional);
+                                packer.AddShaderChunk("#endif // " + conditional);
+                                unpacker.AddShaderChunk("#endif // " + conditional);
+                            }
                         }
                         else
                         {
-                            // pack into existing interpolator
-                            firstChannel = packedCounts[interpIndex];
-                            packedCounts[interpIndex] += vectorCount;
-                        }
+                            // pack float field
 
-                        // add code to packer and unpacker
-                        string packedChannels = GetChannelSwizzle(firstChannel, vectorCount);
-                        packer.AddShaderChunk(string.Format("output.interp{0:00}.{1} = input.{2};", interpIndex, packedChannels, field.Name));
-                        unpacker.AddShaderChunk(string.Format("output.{0} = input.interp{1:00}.{2};", field.Name, interpIndex, packedChannels));
+                            // super simple packing: use the first interpolator that has room for the whole value
+                            int interpIndex = packedCounts.FindIndex(x => (x + floatVectorCount <= 4));
+                            int firstChannel;
+                            if (interpIndex < 0)
+                            {
+                                // allocate a new interpolator
+                                interpIndex = packedCounts.Count;
+                                firstChannel = 0;
+                                packedCounts.Add(floatVectorCount);
+                            }
+                            else
+                            {
+                                // pack into existing interpolator
+                                firstChannel = packedCounts[interpIndex];
+                                packedCounts[interpIndex] += floatVectorCount;
+                            }
+
+                            // add code to packer and unpacker -- packed data declaration is handled later
+                            string packedChannels = GetChannelSwizzle(firstChannel, floatVectorCount);
+                            packer.AddShaderChunk(string.Format("output.interp{0:00}.{1} = input.{2};", interpIndex, packedChannels, field.Name));
+                            unpacker.AddShaderChunk(string.Format("output.{0} = input.interp{1:00}.{2};", field.Name, interpIndex, packedChannels));
+                        }
                     }
                 }
             }
 
-            // create packed structure from packedCounts
+            // add packed data declarations to struct, using the packedCounts
             for (int index = 0; index < packedCounts.Count; index++)
             {
                 int count = packedCounts[index];
                 result.AddShaderChunk(string.Format("{0} interp{1:00} : TEXCOORD{1}; // auto-packed", vectorTypeNames[count], index));
             }
+
+            // add unpacked data declarations to struct (must be at end)
+            result.AddGenerator(structEnd);
 
             // close declarations
             result.Deindent();
@@ -251,7 +334,7 @@ namespace UnityEditor.ShaderGraph
             unpacker.Deindent();
             unpacker.AddShaderChunk("}");
 
-            // combine all of the code
+            // combine all of the code into the result
             result.AddGenerator(packer);
             result.AddGenerator(unpacker);
         }
@@ -643,19 +726,30 @@ namespace UnityEditor.ShaderGraph
             return results;
         }
 
-        public static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster, string structName = "SurfaceDescription")
+        public static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster, string structName = "SurfaceDescription", HashSet<string> activeFields = null)
         {
             surfaceDescriptionStruct.AddShaderChunk(String.Format("struct {0}{{", structName), false);
             surfaceDescriptionStruct.Indent();
             if (isMaster)
             {
                 foreach (var slot in slots)
-                    surfaceDescriptionStruct.AddShaderChunk(String.Format("{0} {1};", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, slot.concreteValueType), NodeUtils.GetHLSLSafeName(slot.shaderOutputName)), false);
+                {
+                    string hlslName = NodeUtils.GetHLSLSafeName(slot.shaderOutputName);
+                    surfaceDescriptionStruct.AddShaderChunk(String.Format("{0} {1};", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, slot.concreteValueType), hlslName), false);
+                    if (activeFields != null)
+                    {
+                        activeFields.Add(structName + "." + hlslName);
+                    }
+                }
                 surfaceDescriptionStruct.Deindent();
             }
             else
             {
                 surfaceDescriptionStruct.AddShaderChunk("float4 PreviewOutput;", false);
+                if (activeFields != null)
+                {
+                    activeFields.Add(structName + ".PreviewOutput");
+                }
             }
             surfaceDescriptionStruct.Deindent();
             surfaceDescriptionStruct.AddShaderChunk("};", false);
