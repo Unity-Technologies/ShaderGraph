@@ -9,7 +9,7 @@ namespace UnityEditor.ShaderGraph
 {
     [Serializable]
     [Title("Master", "PBR")]
-    public class PBRMasterNode : MasterNode<IPBRSubShader>, IMayRequirePosition
+    public class PBRMasterNode : MasterNode<IPBRSubShader>, IMayRequirePosition, IMayRequireNormal
     {
         public const string AlbedoSlotName = "Albedo";
         public const string NormalSlotName = "Normal";
@@ -151,21 +151,30 @@ namespace UnityEditor.ShaderGraph
             }, true);
         }
 
-        public NeededCoordinateSpace RequiresNormal()
+        public NeededCoordinateSpace RequiresNormal(ShaderStageCapability stageCapability)
         {
-            List<ISlot> slots = new List<ISlot>();
+            List<MaterialSlot> slots = new List<MaterialSlot>();
             GetSlots(slots);
-            return slots.OfType<IMayRequireNormal>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresNormal());
+            for(int i = 0; i < slots.Count; i++)
+            {
+                if(slots[i].stageCapability != ShaderStageCapability.All && slots[i].stageCapability != stageCapability)
+                    slots.Remove(slots[i]);
+
+            }
+            return slots.OfType<IMayRequireNormal>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresNormal(stageCapability));
         }
 
-        public NeededCoordinateSpace RequiresPosition()
+        public NeededCoordinateSpace RequiresPosition(ShaderStageCapability stageCapability)
         {
-            s_TempSlots.Clear();
-            GetInputSlots(s_TempSlots);
-            var binding = NeededCoordinateSpace.None;
-            foreach (var slot in s_TempSlots)
-                binding |= slot.RequiresPosition();
-            return binding;
+            List<MaterialSlot> slots = new List<MaterialSlot>();
+            GetSlots(slots);
+            for(int i = 0; i < slots.Count; i++)
+            {
+                if(slots[i].stageCapability != ShaderStageCapability.All && slots[i].stageCapability != stageCapability)
+                    slots.Remove(slots[i]);
+
+            }
+            return slots.OfType<IMayRequirePosition>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresPosition(stageCapability));
         }
     }
 }

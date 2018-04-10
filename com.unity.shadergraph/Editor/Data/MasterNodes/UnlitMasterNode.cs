@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEditor.Graphing;
 using UnityEditor.ShaderGraph.Drawing.Controls;
 using UnityEngine;
@@ -102,14 +103,17 @@ namespace UnityEditor.ShaderGraph
             });
         }
 
-        public NeededCoordinateSpace RequiresPosition()
+        public NeededCoordinateSpace RequiresPosition(ShaderStageCapability stageCapability)
         {
-            s_TempSlots.Clear();
-            GetInputSlots(s_TempSlots);
-            var binding = NeededCoordinateSpace.None;
-            foreach (var slot in s_TempSlots)
-                binding |= slot.RequiresPosition();
-            return binding;
+            List<MaterialSlot> slots = new List<MaterialSlot>();
+            GetSlots(slots);
+            for(int i = 0; i < slots.Count; i++)
+            {
+                if(slots[i].stageCapability != ShaderStageCapability.All && slots[i].stageCapability != stageCapability)
+                    slots.Remove(slots[i]);
+
+            }
+            return slots.OfType<IMayRequirePosition>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresPosition(stageCapability));
         }
     }
 }

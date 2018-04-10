@@ -427,7 +427,7 @@ namespace UnityEditor.ShaderGraph
             return attrs.FirstOrDefault();
         }
 
-        public NeededCoordinateSpace RequiresNormal()
+        public NeededCoordinateSpace RequiresNormal(ShaderStageCapability stageCapability)
         {
             var binding = NeededCoordinateSpace.None;
             s_TempSlots.Clear();
@@ -437,7 +437,7 @@ namespace UnityEditor.ShaderGraph
             return binding;
         }
 
-        public NeededCoordinateSpace RequiresViewDirection()
+        public NeededCoordinateSpace RequiresViewDirection(ShaderStageCapability stageCapability)
         {
             var binding = NeededCoordinateSpace.None;
             s_TempSlots.Clear();
@@ -447,7 +447,7 @@ namespace UnityEditor.ShaderGraph
             return binding;
         }
 
-        public NeededCoordinateSpace RequiresPosition()
+        public NeededCoordinateSpace RequiresPosition(ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
@@ -457,7 +457,7 @@ namespace UnityEditor.ShaderGraph
             return binding;
         }
 
-        public NeededCoordinateSpace RequiresTangent()
+        public NeededCoordinateSpace RequiresTangent(ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
@@ -467,7 +467,7 @@ namespace UnityEditor.ShaderGraph
             return binding;
         }
 
-        public NeededCoordinateSpace RequiresBitangent()
+        public NeededCoordinateSpace RequiresBitangent(ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
@@ -477,7 +477,7 @@ namespace UnityEditor.ShaderGraph
             return binding;
         }
 
-        public bool RequiresMeshUV(UVChannel channel)
+        public bool RequiresMeshUV(UVChannel channel, ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
@@ -489,7 +489,7 @@ namespace UnityEditor.ShaderGraph
             return false;
         }
 
-        public bool RequiresScreenPosition()
+        public bool RequiresScreenPosition(ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
@@ -501,7 +501,7 @@ namespace UnityEditor.ShaderGraph
             return false;
         }
 
-        public bool RequiresVertexColor()
+        public bool RequiresVertexColor(ShaderStageCapability stageCapability)
         {
             s_TempSlots.Clear();
             GetInputSlots(s_TempSlots);
