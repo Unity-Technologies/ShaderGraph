@@ -78,7 +78,7 @@ namespace UnityEditor.ShaderGraph
             finalShader.AddShaderChunk("Properties", false);
             finalShader.AddShaderChunk("{", false);
             finalShader.Indent();
-            finalShader.AddShaderChunk(shaderProperties.GetPropertiesBlock(2), false);
+            finalShader.AddShaderChunk(shaderProperties.GetPropertiesBlock(0), false);
             finalShader.Deindent();
             finalShader.AddShaderChunk("}", false);
 
