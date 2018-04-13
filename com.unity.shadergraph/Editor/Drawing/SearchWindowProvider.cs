@@ -200,6 +200,12 @@ namespace UnityEditor.ShaderGraph.Drawing
                 return !materialSlot.IsCompatibleWith(connectedSlot);
             });
 
+            m_Slots.RemoveAll(slot =>
+            {
+                var materialSlot = (MaterialSlot)slot;
+                return !materialSlot.IsCompatibleStageWith(connectedSlot);
+            });
+
             if (hasSingleSlot && m_Slots.Count == 1)
             {
                 nodeEntries.Add(new NodeEntry
