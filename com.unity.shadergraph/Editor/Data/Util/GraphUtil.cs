@@ -243,11 +243,12 @@ namespace UnityEditor.ShaderGraph
 
                 finalShader.AppendLines(shaderProperties.GetPropertiesDeclaration(0));
 
+                finalShader.AppendLines(surfaceDescriptionInputStruct.ToString());
+                finalShader.AppendNewLine();
+
                 finalShader.Concat(functionBuilder);
                 finalShader.AppendNewLine();
 
-                finalShader.AppendLines(surfaceDescriptionInputStruct.ToString());
-                finalShader.AppendNewLine();
                 finalShader.AppendLines(surfaceDescriptionStruct.ToString());
                 finalShader.AppendNewLine();
                 finalShader.AppendLines(surfaceDescriptionFunction.ToString());
