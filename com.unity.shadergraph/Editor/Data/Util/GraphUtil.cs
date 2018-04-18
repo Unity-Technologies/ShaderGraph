@@ -773,6 +773,11 @@ namespace UnityEditor.ShaderGraph
             if (graph == null)
                 return;
 
+            GraphContext graphContext = new GraphContext()
+            {
+                graphInputStructName = graphInputStructName,
+            };
+
             surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} {1}({2} IN) {{", surfaceDescriptionName, functionName, graphInputStructName), false);
             surfaceDescriptionFunction.Indent();
             surfaceDescriptionFunction.AddShaderChunk(String.Format("{0} surface = ({0})0;", surfaceDescriptionName), false);
@@ -784,7 +789,7 @@ namespace UnityEditor.ShaderGraph
                 if (activeNode is IGeneratesFunction)
                 {
                     functionRegistry.builder.currentNode = activeNode;
-                    (activeNode as IGeneratesFunction).GenerateNodeFunction(functionRegistry, mode);
+                    (activeNode as IGeneratesFunction).GenerateNodeFunction(functionRegistry, graphContext, mode);
                 }
                 if (activeNode is IGeneratesBodyCode)
                     (activeNode as IGeneratesBodyCode).GenerateNodeCode(surfaceDescriptionFunction, mode);

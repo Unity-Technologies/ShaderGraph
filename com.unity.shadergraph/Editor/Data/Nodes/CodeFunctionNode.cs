@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -410,7 +410,7 @@ namespace UnityEditor.ShaderGraph
             return result;
         }
 
-        public virtual void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)
+        public virtual void GenerateNodeFunction(FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode)
         {
             registry.ProvideFunction(GetFunctionName(), s =>
             {

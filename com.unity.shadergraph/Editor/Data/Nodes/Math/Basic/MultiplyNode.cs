@@ -1,4 +1,4 @@
-//using System.Reflection;
+﻿//using System.Reflection;
 using System;
 using System.Collections.Generic;
 using UnityEditor.Graphing;
@@ -76,7 +76,7 @@ namespace UnityEditor.ShaderGraph
                 FindInputSlot<MaterialSlot>(Input2SlotId).concreteValueType.ToString(precision));
         }
 
-        public void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)
+        public void GenerateNodeFunction(FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode)
         {
             registry.ProvideFunction(GetFunctionName(), s =>
             {

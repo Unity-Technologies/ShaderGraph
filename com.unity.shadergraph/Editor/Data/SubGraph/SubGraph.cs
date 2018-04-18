@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -56,13 +56,13 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
-        public void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)
+        public void GenerateNodeFunction(FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode)
         {
             foreach (var node in activeNodes)
             {
                 node.ValidateNode();
                 if (node is IGeneratesFunction)
-                    (node as IGeneratesFunction).GenerateNodeFunction(registry, generationMode);
+                    (node as IGeneratesFunction).GenerateNodeFunction(registry, graphContext, generationMode);
             }
         }
 
@@ -79,7 +79,7 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
-        public void GenerateSubGraphFunction(string functionName, FunctionRegistry registry, ShaderGraphRequirements reqs, GenerationMode generationMode)
+        public void GenerateSubGraphFunction(string functionName, FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode)
         {
             registry.ProvideFunction(functionName, s =>
             {
@@ -91,7 +91,7 @@ namespace UnityEditor.ShaderGraph
                     arguments.Add(string.Format("{0}", prop.GetPropertyAsArgumentString()));
 
                 // now pass surface inputs
-                arguments.Add("SurfaceInputs IN");
+                arguments.Add(string.Format("{0} IN", graphContext.graphInputStructName));
 
                 // Now generate outputs
                 foreach (var slot in graphOutputs)

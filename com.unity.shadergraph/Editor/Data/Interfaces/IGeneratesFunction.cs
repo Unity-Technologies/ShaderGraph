@@ -1,7 +1,7 @@
-namespace UnityEditor.ShaderGraph
+﻿namespace UnityEditor.ShaderGraph
 {
     public interface IGeneratesFunction
     {
-        void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode);
+        void GenerateNodeFunction(FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode);
     }
 }
