@@ -108,7 +108,7 @@ namespace UnityEditor.ShaderGraph
 
             [Optional] Vector3 TangentSpaceNormal;
 
-            [Optional] Vector3 screenPosition;
+            [Optional] Vector4 screenPosition;
             [Optional] Vector4 uv0;
             [Optional] Vector4 uv1;
             [Optional] Vector4 uv2;
