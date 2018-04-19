@@ -168,7 +168,7 @@ namespace UnityEditor.Graphing.UnitTests
         private class OnEnableNode : TestNode, IOnAssetEnabled
         {
             public bool called = false;
-            public void OnEnable()
+            public void OnAssetEnable()
             {
                 called = true;
             }
@@ -183,7 +183,7 @@ namespace UnityEditor.Graphing.UnitTests
             graph.AddNode(node);
 
             Assert.IsFalse(node.called);
-            graph.OnEnable();
+            graph.OnAssetEnable();
             Assert.IsTrue(node.called);
         }
 

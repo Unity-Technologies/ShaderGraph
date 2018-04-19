@@ -687,11 +687,11 @@ namespace UnityEditor.ShaderGraph
                 AddEdgeToNodeEdges(edge);
         }
 
-        public void OnEnable()
+        public void OnAssetEnable()
         {
             foreach (var node in GetNodes<INode>().OfType<IOnAssetEnabled>())
             {
-                node.OnEnable();
+                node.OnAssetEnable();
             }
         }
     }

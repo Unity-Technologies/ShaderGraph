@@ -47,24 +47,28 @@ namespace UnityEditor.Graphing
 
         public void OnAfterDeserialize()
         {
-            var deserializedGraph = SerializationHelper.Deserialize<IGraph>(m_SerializedGraph, null);
-            if (graph == null)
-                graph = deserializedGraph;
-            else
-                m_DeserializedGraph = deserializedGraph;
         }
 
         void Validate()
         {
             if (graph != null)
             {
-                graph.OnEnable();
+                graph.OnAssetEnable();
                 graph.ValidateGraph();
             }
         }
 
         void OnEnable()
         {
+            if (!m_SerializedGraph.typeInfo.IsValid())
+                return;
+
+            var deserializedGraph = SerializationHelper.Deserialize<IGraph>(m_SerializedGraph, null);
+            if (graph == null)
+                graph = deserializedGraph;
+            else
+                m_DeserializedGraph = deserializedGraph;
+
             Validate();
 
             Undo.undoRedoPerformed += UndoRedoPerformed;

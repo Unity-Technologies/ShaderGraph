@@ -20,7 +20,7 @@ namespace UnityEditor.ShaderGraph
 
         public void LoadedFromDisk()
         {
-            OnEnable();
+            OnAssetEnable();
             ValidateGraph();
         }
     }

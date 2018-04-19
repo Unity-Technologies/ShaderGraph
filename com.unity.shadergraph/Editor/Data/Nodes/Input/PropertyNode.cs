@@ -186,7 +186,7 @@ namespace UnityEditor.ShaderGraph
                 m_PropertyGuid = new Guid(m_PropertyGuidSerialized);
         }
 
-        public void OnEnable()
+        public void OnAssetEnable()
         {
             UpdateNode();
         }

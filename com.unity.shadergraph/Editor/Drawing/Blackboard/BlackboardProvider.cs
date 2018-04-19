@@ -255,7 +255,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         {
             foreach (var node in m_Graph.GetNodes<PropertyNode>())
             {
-                node.OnEnable();
+                node.OnAssetEnable();
                 node.Dirty(ModificationScope.Node);
             }
         }

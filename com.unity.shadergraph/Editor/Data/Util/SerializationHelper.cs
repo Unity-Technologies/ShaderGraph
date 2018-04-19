@@ -16,6 +16,11 @@ namespace UnityEditor.Graphing
             {
                 return !string.IsNullOrEmpty(fullName);
             }
+
+            public override string ToString()
+            {
+                return string.Format("TypeSerializationInfo({0})", fullName);
+            }
         }
 
         [Serializable]
@@ -26,6 +31,11 @@ namespace UnityEditor.Graphing
 
             [SerializeField]
             public string JSONnodeData;
+
+            public override string ToString()
+            {
+                return string.Format("JSONSerializedElement({0}, {1})", typeInfo, JSONnodeData);
+            }
         }
 
         public static JSONSerializedElement nullElement
@@ -90,7 +100,10 @@ namespace UnityEditor.Graphing
         public static T Deserialize<T>(JSONSerializedElement item, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper,  params object[] constructorArgs) where T : class
         {
             if (!item.typeInfo.IsValid() || string.IsNullOrEmpty(item.JSONnodeData))
+            {
+                Debug.Log(item);
                 throw new ArgumentException(string.Format("Can not deserialize {0}, it is invalid", item));
+            }
 
             TypeSerializationInfo info = item.typeInfo;
             info.fullName = info.fullName.Replace("UnityEngine.MaterialGraph", "UnityEditor.ShaderGraph");
@@ -105,7 +118,10 @@ namespace UnityEditor.Graphing
             T instance;
             try
             {
-                instance = Activator.CreateInstance(type, constructorArgs) as T;
+                if (type.IsSubclassOf(typeof(ScriptableObject)))
+                    instance = ScriptableObject.CreateInstance(type) as T;
+                else
+                    instance = Activator.CreateInstance(type, constructorArgs) as T;
             }
             catch (Exception e)
             {

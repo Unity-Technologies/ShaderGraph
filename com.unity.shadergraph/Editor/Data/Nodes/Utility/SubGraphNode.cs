@@ -147,7 +147,7 @@ namespace UnityEditor.ShaderGraph
                 , false);
         }
 
-        public void OnEnable()
+        public void OnAssetEnable()
         {
             UpdateSlots();
         }
@@ -242,7 +242,7 @@ namespace UnityEditor.ShaderGraph
         {
             if (referencedGraph != null)
             {
-                referencedGraph.OnEnable();
+                referencedGraph.OnAssetEnable();
                 referencedGraph.ValidateGraph();
 
                 if (referencedGraph.GetNodes<INode>().Any(x => x.hasError))
