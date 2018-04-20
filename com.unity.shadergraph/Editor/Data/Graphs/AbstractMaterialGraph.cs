@@ -622,6 +622,7 @@ namespace UnityEditor.ShaderGraph
 
                 var oldGuid = node.guid;
                 var newGuid = node.RewriteGuid();
+                nodeGuidMap[oldGuid] = newGuid;
 
                 // Check if the property nodes need to be made into a concrete node.
                 if (node is PropertyNode)
@@ -641,10 +642,6 @@ namespace UnityEditor.ShaderGraph
                             nodeGuidMap[oldGuid] = pastedNode.guid;
                         }
                     }
-                }
-                else
-                {
-                    nodeGuidMap[oldGuid] = newGuid;
                 }
 
                 var drawState = node.drawState;
