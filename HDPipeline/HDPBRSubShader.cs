@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Linq;
 using UnityEditor.Graphing;
-
-//using UnityEngine.Experimental.Rendering.HDPipeline;      // This requires us to make ShaderGraph assembly depend on the HDPipeline assembly... probably not a good idea
 
 
 namespace UnityEditor.ShaderGraph
@@ -236,13 +234,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-//                 PBRMasterNode.AlbedoSlotId,
-//                 PBRMasterNode.NormalSlotId,
-//                 PBRMasterNode.MetallicSlotId,
-//                 PBRMasterNode.SpecularSlotId,
-//                 PBRMasterNode.EmissionSlotId,
-//                 PBRMasterNode.SmoothnessSlotId,
-//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -265,13 +256,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-//                 PBRMasterNode.AlbedoSlotId,
-//                 PBRMasterNode.NormalSlotId,
-//                 PBRMasterNode.MetallicSlotId,
-//                 PBRMasterNode.SpecularSlotId,
-//                 PBRMasterNode.EmissionSlotId,
-//                 PBRMasterNode.SmoothnessSlotId,
-//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
@@ -374,13 +358,6 @@ namespace UnityEditor.ShaderGraph
             },
             PixelShaderSlots = new List<int>()
             {
-//                 PBRMasterNode.AlbedoSlotId,
-//                 PBRMasterNode.NormalSlotId,
-//                 PBRMasterNode.MetallicSlotId,
-//                 PBRMasterNode.SpecularSlotId,
-//                 PBRMasterNode.EmissionSlotId,
-//                 PBRMasterNode.SmoothnessSlotId,
-//                 PBRMasterNode.OcclusionSlotId,
                 PBRMasterNode.AlphaSlotId,
                 PBRMasterNode.AlphaThresholdSlotId
             }
