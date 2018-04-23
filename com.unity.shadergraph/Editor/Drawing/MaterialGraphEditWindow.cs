@@ -311,7 +311,10 @@ namespace UnityEditor.ShaderGraph.Drawing
                 switch (fromSlot.concreteValueType)
                 {
                     case ConcreteSlotValueType.Texture2D:
-                        prop = new TextureShaderProperty();
+                        prop = new Texture2DShaderProperty();
+                        break;
+                    case ConcreteSlotValueType.Texture3D:
+                        prop = new Texture3DShaderProperty();
                         break;
                     case ConcreteSlotValueType.Cubemap:
                         prop = new CubemapShaderProperty();

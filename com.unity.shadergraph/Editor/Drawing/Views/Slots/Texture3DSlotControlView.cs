@@ -7,22 +7,22 @@ using Object = UnityEngine.Object;
 
 namespace UnityEditor.ShaderGraph.Drawing.Slots
 {
-    public class Texture2DSlotControlView : VisualElement
+    public class Texture3DSlotControlView : VisualElement
     {
-        Texture2DInputMaterialSlot m_Slot;
+        Texture3DInputMaterialSlot m_Slot;
 
-        public Texture2DSlotControlView(Texture2DInputMaterialSlot slot)
+        public Texture3DSlotControlView(Texture3DInputMaterialSlot slot)
         {
             m_Slot = slot;
-            AddStyleSheetPath("Styles/Controls/TextureSlotControlView");
-            var objectField = new ObjectField { objectType = typeof(Texture2D), value = m_Slot.texture };
+            AddStyleSheetPath("Styles/Controls/Texture3DSlotControlView");
+            var objectField = new ObjectField { objectType = typeof(Texture3D), value = m_Slot.texture };
             objectField.OnValueChanged(OnValueChanged);
             Add(objectField);
         }
 
         void OnValueChanged(ChangeEvent<Object> evt)
         {
-            var texture = evt.newValue as Texture2D;
+            var texture = evt.newValue as Texture3D;
             if (texture != m_Slot.texture)
             {
                 m_Slot.owner.owner.owner.RegisterCompleteObjectUndo("Change Texture");

@@ -50,7 +50,21 @@ namespace UnityEditor.ShaderGraph
         {
             var result = new List<TextureInfo>();
 
-            foreach (var prop in m_Properties.OfType<TextureShaderProperty>())
+            foreach (var prop in m_Properties.OfType<Texture2DShaderProperty>())
+            {
+                if (prop.referenceName != null)
+                {
+                    var textureInfo = new TextureInfo
+                    {
+                        name = prop.referenceName,
+                        textureId = prop.value.texture != null ? prop.value.texture.GetInstanceID() : 0,
+                        modifiable = prop.modifiable
+                    };
+                    result.Add(textureInfo);
+                }
+            }
+
+            foreach (var prop in m_Properties.OfType<Texture3DShaderProperty>())
             {
                 if (prop.referenceName != null)
                 {

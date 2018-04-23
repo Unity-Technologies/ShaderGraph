@@ -7,38 +7,38 @@ using UnityEngine.Experimental.UIElements;
 namespace UnityEditor.ShaderGraph.Drawing.Controls
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class Texture2DControlAttribute : Attribute, IControlAttribute
+    public class Texture3DControlAttribute : Attribute, IControlAttribute
     {
         string m_Label;
 
-        public Texture2DControlAttribute(string label = null)
+        public Texture3DControlAttribute(string label = null)
         {
             m_Label = label;
         }
 
         public VisualElement InstantiateControl(AbstractMaterialNode node, PropertyInfo propertyInfo)
         {
-            return new Texture2DControlView(m_Label, node, propertyInfo);
+            return new Texture3DControlView(m_Label, node, propertyInfo);
         }
     }
 
-    public class Texture2DControlView : VisualElement
+    public class Texture3DControlView : VisualElement
     {
         AbstractMaterialNode m_Node;
         PropertyInfo m_PropertyInfo;
 
-        public Texture2DControlView(string label, AbstractMaterialNode node, PropertyInfo propertyInfo)
+        public Texture3DControlView(string label, AbstractMaterialNode node, PropertyInfo propertyInfo)
         {
             m_Node = node;
             m_PropertyInfo = propertyInfo;
-            if (propertyInfo.PropertyType != typeof(Texture2D))
-                throw new ArgumentException("Property must be of type Texture 2D.", "propertyInfo");
+            if (propertyInfo.PropertyType != typeof(Texture3D))
+                throw new ArgumentException("Property must be of type Texture 3D.", "propertyInfo");
             label = label ?? ObjectNames.NicifyVariableName(propertyInfo.Name);
 
             if (!string.IsNullOrEmpty(label))
                 Add(new Label(label));
 
-            var textureField = new ObjectField { value = (Texture2D)m_PropertyInfo.GetValue(m_Node, null), objectType = typeof(Texture2D) };
+            var textureField = new ObjectField { value = (Texture3D)m_PropertyInfo.GetValue(m_Node, null), objectType = typeof(Texture3D) };
             textureField.OnValueChanged(OnChange);
             Add(textureField);
         }

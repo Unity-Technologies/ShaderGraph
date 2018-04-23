@@ -58,9 +58,14 @@ namespace UnityEditor.ShaderGraph
                 AddSlot(new Vector4MaterialSlot(OutputSlotId, property.displayName, "Out", SlotType.Output, Vector4.zero));
                 RemoveSlotsNameNotMatching(new[] {OutputSlotId});
             }
-            else if (property is TextureShaderProperty)
+            else if (property is Texture2DShaderProperty)
             {
                 AddSlot(new Texture2DMaterialSlot(OutputSlotId, property.displayName, "Out", SlotType.Output));
+                RemoveSlotsNameNotMatching(new[] {OutputSlotId});
+            }
+            else if (property is Texture3DShaderProperty)
+            {
+                AddSlot(new Texture3DMaterialSlot(OutputSlotId, property.displayName, "Out", SlotType.Output));
                 RemoveSlotsNameNotMatching(new[] {OutputSlotId});
             }
             else if (property is CubemapShaderProperty)
@@ -157,7 +162,7 @@ namespace UnityEditor.ShaderGraph
             var graph = owner as AbstractMaterialGraph;
             var property = graph.properties.FirstOrDefault(x => x.guid == propertyGuid);
 
-            if (!(property is TextureShaderProperty) && !(property is CubemapShaderProperty))
+            if (!(property is Texture2DShaderProperty) && !(property is CubemapShaderProperty) && !(property is Texture3DShaderProperty))
                 return base.GetVariableNameForSlot(slotId);
 
             return property.referenceName;

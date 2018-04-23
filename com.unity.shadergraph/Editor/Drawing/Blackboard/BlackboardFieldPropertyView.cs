@@ -191,13 +191,24 @@ namespace UnityEditor.ShaderGraph.Drawing
                 });
                 AddRow("Mode", colorModeField);
             }
-            else if (property is TextureShaderProperty)
+            else if (property is Texture2DShaderProperty)
             {
-                var textureProperty = (TextureShaderProperty)property;
-                var field = new ObjectField { value = textureProperty.value.texture, objectType = typeof(Texture) };
+                var textureProperty = (Texture2DShaderProperty)property;
+                var field = new ObjectField { value = textureProperty.value.texture, objectType = typeof(Texture2D) };
                 field.OnValueChanged(evt =>
                 {
-                    textureProperty.value.texture = (Texture)evt.newValue;
+                    textureProperty.value.texture = (Texture2D)evt.newValue;
+                    DirtyNodes();
+                });
+                AddRow("Default", field);
+            }
+            else if (property is Texture3DShaderProperty)
+            {
+                var textureProperty = (Texture3DShaderProperty)property;
+                var field = new ObjectField { value = textureProperty.value.texture, objectType = typeof(Texture3D) };
+                field.OnValueChanged(evt =>
+                {
+                    textureProperty.value.texture = (Texture3D)evt.newValue;
                     DirtyNodes();
                 });
                 AddRow("Default", field);

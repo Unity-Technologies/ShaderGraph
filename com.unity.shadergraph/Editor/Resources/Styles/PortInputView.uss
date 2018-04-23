@@ -65,11 +65,13 @@ PortInputView.typeMatrix2 {
 }
 
 PortInputView.typeTexture2D > #container > #slot > #dot, 
+PortInputView.typeTexture3D > #container > #slot > #dot, 
 PortInputView.typeCubemap > #container > #slot > #dot {
     background-color: #FF8B8B;
 }
 
 PortInputView.typeTexture2D,
+PortInputView.typeTexture3D,
 PortInputView.typeCubemap {
     edge-color: #FF8B8B;
 }
