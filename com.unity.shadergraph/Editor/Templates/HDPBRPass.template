@@ -1,4 +1,4 @@
-﻿Pass
+Pass
 {
     // based on HDPBRPass.template
     Name "${PassName}"
@@ -162,13 +162,33 @@ ${InterpolatorPacking}
             ZERO_INITIALIZE(GraphInputs, output);
 
             $GraphInputs.WorldSpaceNormal:          output.WorldSpaceNormal =            normalize(input.worldToTangent[2].xyz);
-            $GraphInputs.WorldSpaceTangent:		    output.WorldSpaceTangent =           input.worldToTangent[0].xyz;
-            $GraphInputs.WorldSpaceBiTangent:       output.WorldSpaceBiTangent =         input.worldToTangent[1].xyz;
-            $GraphInputs.WorldSpaceViewDirection:   output.WorldSpaceViewDirection =     normalize(viewWS);
-            $GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS;
-            
+			$GraphInputs.ObjectSpaceNormal:         output.ObjectSpaceNormal =           mul(output.WorldSpaceNormal, (float3x3) unity_ObjectToWorld);      // transposed multiplication by inverse matrix to handle normal scale
+			$GraphInputs.ViewSpaceNormal:           output.ViewSpaceNormal =             mul(output.WorldSpaceNormal, (float3x3) UNITY_MATRIX_I_V);         // transposed multiplication by inverse matrix to handle normal scale
 			$GraphInputs.TangentSpaceNormal:        output.TangentSpaceNormal =          float3(0.0f, 0.0f, 1.0f);
 
+            $GraphInputs.WorldSpaceTangent:		    output.WorldSpaceTangent =           input.worldToTangent[0].xyz;
+			$GraphInputs.ObjectSpaceTangent:        output.ObjectSpaceTangent =          mul((float3x3) unity_WorldToObject, output.WorldSpaceTangent);
+			$GraphInputs.ViewSpaceTangent:          output.ViewSpaceTangent =            mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceTangent);
+			$GraphInputs.TangentSpaceTangent:       output.TangentSpaceTangent =         float3(1.0f, 0.0f, 0.0f);
+
+            $GraphInputs.WorldSpaceBiTangent:       output.WorldSpaceBiTangent =         input.worldToTangent[1].xyz;
+			$GraphInputs.ObjectSpaceBiTangent:      output.ObjectSpaceBiTangent =        mul((float3x3) unity_WorldToObject, output.WorldSpaceBiTangent);
+			$GraphInputs.ViewSpaceBiTangent:        output.ViewSpaceBiTangent =          mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceBiTangent);
+			$GraphInputs.TangentSpaceBiTangent:     output.TangentSpaceBiTangent =       float3(0.0f, 1.0f, 0.0f);
+
+            $GraphInputs.WorldSpaceViewDirection:   output.WorldSpaceViewDirection =     normalize(viewWS);
+			$GraphInputs.ObjectSpaceViewDirection:  output.ObjectSpaceViewDirection =    mul((float3x3) unity_WorldToObject, output.WorldSpaceViewDirection);
+			$GraphInputs.ViewSpaceViewDirection:    output.ViewSpaceViewDirection =      mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceViewDirection);
+            $GraphInputs.TangentSpaceViewDirection: float3x3 tangentSpaceTransform =     float3x3(output.WorldSpaceTangent,output.WorldSpaceBiTangent,output.WorldSpaceNormal);
+			$GraphInputs.TangentSpaceViewDirection: output.TangentSpaceViewDirection =   mul(tangentSpaceTransform, output.WorldSpaceViewDirection);
+
+            // TODO: FragInputs.positionWS is badly named -- it's camera relative, not in world space
+            $GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS + _WorldSpaceCameraPos;
+            $GraphInputs.ObjectSpacePosition:       output.ObjectSpacePosition =         mul(unity_WorldToObject, float4(input.positionWS + _WorldSpaceCameraPos, 1.0f)).xyz;
+            $GraphInputs.ViewSpacePosition:         float4 posViewSpace =                mul(UNITY_MATRIX_V, float4(input.positionWS, 1.0f));
+            $GraphInputs.ViewSpacePosition:         output.ViewSpacePosition =           posViewSpace.xyz / posViewSpace.w;
+            $GraphInputs.TangentSpacePosition:      output.TangentSpacePosition =        float3(0.0f, 0.0f, 0.0f);
+            
             $GraphInputs.screenPosition:            output.screenPosition = input.positionSS;
             
             $GraphInputs.uv0:                       output.uv0 =    float4(input.texCoord0, 0.0f, 0.0f);

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor.Graphing;
@@ -100,13 +100,30 @@ namespace UnityEditor.ShaderGraph
 
         struct GraphInputs
         {
+            [Optional] Vector3 ObjectSpaceNormal;
+            [Optional] Vector3 ViewSpaceNormal;
             [Optional] Vector3 WorldSpaceNormal;
-            [Optional] Vector3 WorldSpaceTangent;
-            [Optional] Vector3 WorldSpaceBiTangent;
-            [Optional] Vector3 WorldSpaceViewDirection;
-            [Optional] Vector3 WorldSpacePosition;
-
             [Optional] Vector3 TangentSpaceNormal;
+
+            [Optional] Vector3 ObjectSpaceTangent;
+            [Optional] Vector3 ViewSpaceTangent;
+            [Optional] Vector3 WorldSpaceTangent;
+            [Optional] Vector3 TangentSpaceTangent;
+
+            [Optional] Vector3 ObjectSpaceBiTangent;
+            [Optional] Vector3 ViewSpaceBiTangent;
+            [Optional] Vector3 WorldSpaceBiTangent;
+            [Optional] Vector3 TangentSpaceBiTangent;
+
+            [Optional] Vector3 ObjectSpaceViewDirection;
+            [Optional] Vector3 ViewSpaceViewDirection;
+            [Optional] Vector3 WorldSpaceViewDirection;
+            [Optional] Vector3 TangentSpaceViewDirection;
+
+            [Optional] Vector3 ObjectSpacePosition;
+            [Optional] Vector3 ViewSpacePosition;
+            [Optional] Vector3 WorldSpacePosition;
+            [Optional] Vector3 TangentSpacePosition;
 
             [Optional] Vector4 screenPosition;
             [Optional] Vector4 uv0;
@@ -118,16 +135,34 @@ namespace UnityEditor.ShaderGraph
             public static Dependency[] dependencies = new Dependency[]
             {
                 new Dependency("GraphInputs.WorldSpaceNormal",          "FragInputs.worldToTangent"),
+                new Dependency("GraphInputs.ObjectSpaceNormal",         "GraphInputs.WorldSpaceNormal"),
+                new Dependency("GraphInputs.ViewSpaceNormal",           "GraphInputs.WorldSpaceNormal"),
+
                 new Dependency("GraphInputs.WorldSpaceTangent",         "FragInputs.worldToTangent"),
+                new Dependency("GraphInputs.ObjectSpaceTangent",        "GraphInputs.WorldSpaceTangent"),
+                new Dependency("GraphInputs.ViewSpaceTangent",          "GraphInputs.WorldSpaceTangent"),
+
                 new Dependency("GraphInputs.WorldSpaceBiTangent",       "FragInputs.worldToTangent"),
+                new Dependency("GraphInputs.ObjectSpaceBiTangent",      "GraphInputs.WorldSpaceBiTangent"),
+                new Dependency("GraphInputs.ViewSpaceBiTangent",        "GraphInputs.WorldSpaceBiTangent"),
+
                 new Dependency("GraphInputs.WorldSpacePosition",        "FragInputs.positionWS"),
+                new Dependency("GraphInputs.ObjectSpacePosition",       "FragInputs.positionWS"),
+                new Dependency("GraphInputs.ViewSpacePosition",         "FragInputs.positionWS"),
+
+                new Dependency("GraphInputs.ObjectSpaceViewDirection",  "GraphInputs.WorldSpaceViewDirection"),
+                new Dependency("GraphInputs.ViewSpaceViewDirection",    "GraphInputs.WorldSpaceViewDirection"),
+                new Dependency("GraphInputs.TangentSpaceViewDirection", "GraphInputs.WorldSpaceViewDirection"),
+                new Dependency("GraphInputs.TangentSpaceViewDirection", "GraphInputs.WorldSpaceTangent"),
+                new Dependency("GraphInputs.TangentSpaceViewDirection", "GraphInputs.WorldSpaceBiTangent"),
+                new Dependency("GraphInputs.TangentSpaceViewDirection", "GraphInputs.WorldSpaceNormal"),
+
                 new Dependency("GraphInputs.screenPosition",            "FragInputs.positionSS"),
                 new Dependency("GraphInputs.uv0",                       "FragInputs.texCoord0"),
                 new Dependency("GraphInputs.uv1",                       "FragInputs.texCoord1"),
                 new Dependency("GraphInputs.uv2",                       "FragInputs.texCoord2"),
                 new Dependency("GraphInputs.uv3",                       "FragInputs.texCoord3"),
                 new Dependency("GraphInputs.vertexColor",               "FragInputs.color"),
-                new Dependency("GraphInputs.TangentSpaceNormal",        "GraphInputs.WorldSpaceNormal"),        // also FragInputs.worldToTangent, but that's handled as a sub-dependency of WorldSpaceNormal
             };
         };
 
@@ -143,34 +178,79 @@ namespace UnityEditor.ShaderGraph
                 activeFields.Add("GraphInputs.vertexColor");
             }
 
-            if ((requirements.requiresNormal & NeededCoordinateSpace.World) != 0)
+            if (requirements.requiresNormal != 0)
             {
-                activeFields.Add("GraphInputs.WorldSpaceNormal");
-            }
+                if ((requirements.requiresNormal & NeededCoordinateSpace.Object) > 0)
+                    activeFields.Add("GraphInputs.ObjectSpaceNormal");
 
-            if ((requirements.requiresNormal & NeededCoordinateSpace.Tangent) != 0)
-            {
-                activeFields.Add("GraphInputs.TangentSpaceNormal");
+                if ((requirements.requiresNormal & NeededCoordinateSpace.View) > 0)
+                    activeFields.Add("GraphInputs.ViewSpaceNormal");
+
+                if ((requirements.requiresNormal & NeededCoordinateSpace.World) > 0)
+                    activeFields.Add("GraphInputs.WorldSpaceNormal");
+
+                if ((requirements.requiresNormal & NeededCoordinateSpace.Tangent) > 0)
+                    activeFields.Add("GraphInputs.TangentSpaceNormal");
             }
 
             if (requirements.requiresTangent != 0)
             {
-                activeFields.Add("GraphInputs.WorldSpaceTangent");              // TODO: check actual space requirement
+                if ((requirements.requiresTangent & NeededCoordinateSpace.Object) > 0)
+                    activeFields.Add("GraphInputs.ObjectSpaceTangent");
+
+                if ((requirements.requiresTangent & NeededCoordinateSpace.View) > 0)
+                    activeFields.Add("GraphInputs.ViewSpaceTangent");
+
+                if ((requirements.requiresTangent & NeededCoordinateSpace.World) > 0)
+                    activeFields.Add("GraphInputs.WorldSpaceTangent");
+
+                if ((requirements.requiresTangent & NeededCoordinateSpace.Tangent) > 0)
+                    activeFields.Add("GraphInputs.TangentSpaceTangent");
             }
 
             if (requirements.requiresBitangent != 0)
             {
-                activeFields.Add("GraphInputs.WorldSpaceBiTangent");            // TODO: check actual space requirement
+                if ((requirements.requiresBitangent & NeededCoordinateSpace.Object) > 0)
+                    activeFields.Add("GraphInputs.ObjectSpaceBiTangent");
+
+                if ((requirements.requiresBitangent & NeededCoordinateSpace.View) > 0)
+                    activeFields.Add("GraphInputs.ViewSpaceBiTangent");
+
+                if ((requirements.requiresBitangent & NeededCoordinateSpace.World) > 0)
+                    activeFields.Add("GraphInputs.WorldSpaceBiTangent");
+
+                if ((requirements.requiresBitangent & NeededCoordinateSpace.Tangent) > 0)
+                    activeFields.Add("GraphInputs.TangentSpaceBiTangent");
             }
 
             if (requirements.requiresViewDir != 0)
             {
-                activeFields.Add("GraphInputs.WorldSpaceViewDirection");        // TODO: check actual space requirement
+                if ((requirements.requiresViewDir & NeededCoordinateSpace.Object) > 0)
+                    activeFields.Add("GraphInputs.ObjectSpaceViewDirection");
+
+                if ((requirements.requiresViewDir & NeededCoordinateSpace.View) > 0)
+                    activeFields.Add("GraphInputs.ViewSpaceViewDirection");
+
+                if ((requirements.requiresViewDir & NeededCoordinateSpace.World) > 0)
+                    activeFields.Add("GraphInputs.WorldSpaceViewDirection");
+
+                if ((requirements.requiresViewDir & NeededCoordinateSpace.Tangent) > 0)
+                    activeFields.Add("GraphInputs.TangentSpaceViewDirection");
             }
 
             if (requirements.requiresPosition != 0)
             {
-                activeFields.Add("GraphInputs.WorldSpacePosition");             // TODO: check actual space requirement
+                if ((requirements.requiresPosition & NeededCoordinateSpace.Object) > 0)
+                    activeFields.Add("GraphInputs.ObjectSpacePosition");
+
+                if ((requirements.requiresPosition & NeededCoordinateSpace.View) > 0)
+                    activeFields.Add("GraphInputs.ViewSpacePosition");
+
+                if ((requirements.requiresPosition & NeededCoordinateSpace.World) > 0)
+                    activeFields.Add("GraphInputs.WorldSpacePosition");
+
+                if ((requirements.requiresPosition & NeededCoordinateSpace.Tangent) > 0)
+                    activeFields.Add("GraphInputs.TangentSpacePosition");
             }
 
             foreach (var channel in requirements.requiresMeshUVs.Distinct())
