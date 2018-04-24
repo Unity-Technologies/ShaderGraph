@@ -60,7 +60,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                 drawState.position = new Rect(nodePosition, drawState.position.size);
                 node.drawState = drawState;
                 m_Graph.AddNode(node);
-                var inputslot = node.FindSlot<Texture2DInputMaterialSlot>(SampleTexture2DNode.TextureInputId);
+                var inputslot = node.FindSlot<TextureInputMaterialSlot>(SampleTexture2DNode.TextureInputId);
                 if (inputslot != null)
                     inputslot.texture = texture2D;
             }

@@ -88,7 +88,7 @@ namespace UnityEditor.ShaderGraph.UnitTests
             Assert.AreEqual("float2", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Vector2));
             Assert.AreEqual("float3", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Vector3));
             Assert.AreEqual("float4", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Vector4));
-            Assert.AreEqual("Texture2D", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Texture2D));
+            Assert.AreEqual("Texture2D", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Texture));
             Assert.AreEqual("float2x2", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Matrix2));
             Assert.AreEqual("float3x3", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Matrix3));
             Assert.AreEqual("float4x4", NodeUtils.ConvertConcreteSlotValueTypeToString(AbstractMaterialNode.OutputPrecision.@float, ConcreteSlotValueType.Matrix4));

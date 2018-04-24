@@ -88,8 +88,8 @@ namespace UnityEditor.ShaderGraph
                     return "(4x4)";
                 case ConcreteSlotValueType.SamplerState:
                     return "(SS)";
-                case ConcreteSlotValueType.Texture2D:
-                    return "(T2)";
+                case ConcreteSlotValueType.Texture:
+                    return "(T)";
                 case ConcreteSlotValueType.Texture3D:
                     return "(T3)";
                 case ConcreteSlotValueType.Cubemap:
@@ -126,10 +126,10 @@ namespace UnityEditor.ShaderGraph
                     return new Matrix3MaterialSlot(slotId, displayName, shaderOutputName, slotType, shaderStage, hidden);
                 case SlotValueType.Matrix2:
                     return new Matrix2MaterialSlot(slotId, displayName, shaderOutputName, slotType, shaderStage, hidden);
-                case SlotValueType.Texture2D:
+                case SlotValueType.Texture:
                     return slotType == SlotType.Input
-                        ? new Texture2DInputMaterialSlot(slotId, displayName, shaderOutputName, shaderStage, hidden)
-                        : new Texture2DMaterialSlot(slotId, displayName, shaderOutputName, slotType, shaderStage, hidden);
+                        ? new TextureInputMaterialSlot(slotId, displayName, shaderOutputName, shaderStage, hidden)
+                        : new TextureMaterialSlot(slotId, displayName, shaderOutputName, slotType, shaderStage, hidden);
                 case SlotValueType.Texture3D:
                     return slotType == SlotType.Input
                         ? new Texture3DInputMaterialSlot(slotId, displayName, shaderOutputName, shaderStage, hidden)
@@ -258,8 +258,8 @@ namespace UnityEditor.ShaderGraph
                     return inputType == SlotValueType.Matrix2
                         || inputType == SlotValueType.DynamicMatrix
                         || inputType == SlotValueType.Dynamic;
-                case SlotValueType.Texture2D:
-                    return inputType == SlotValueType.Texture2D;
+                case SlotValueType.Texture:
+                    return inputType == SlotValueType.Texture;
                 case SlotValueType.Texture3D:
                     return inputType == SlotValueType.Texture3D;
                 case SlotValueType.Cubemap:
@@ -327,7 +327,7 @@ namespace UnityEditor.ShaderGraph
         {
             switch (slotValue)
             {
-                case ConcreteSlotValueType.Texture2D:
+                case ConcreteSlotValueType.Texture:
                     return PropertyType.Texture2D;
                 case ConcreteSlotValueType.Texture3D:
                     return PropertyType.Texture3D;

@@ -175,7 +175,7 @@ namespace UnityEditor.ShaderGraph
                         slotType = SlotValueType.Vector4;
                         break;
                     case PropertyType.Texture2D:
-                        slotType = SlotValueType.Texture2D;
+                        slotType = SlotValueType.Texture;
                         break;
                     case PropertyType.Texture3D:
                         slotType = SlotValueType.Texture3D;
@@ -214,9 +214,9 @@ namespace UnityEditor.ShaderGraph
                 var id = prop.guid.GetHashCode();
                 MaterialSlot slot = MaterialSlot.CreateMaterialSlot(slotType, id, prop.displayName, prop.referenceName, SlotType.Input, prop.defaultValue);
                 // copy default for texture 2d for niceness
-                if (slotType == SlotValueType.Texture2D && propType == PropertyType.Texture2D)
+                if (slotType == SlotValueType.Texture && propType == PropertyType.Texture2D)
                 {
-                    var tSlot = slot as Texture2DInputMaterialSlot;
+                    var tSlot = slot as TextureInputMaterialSlot;
                     var tProp = prop as Texture2DShaderProperty;
                     if (tSlot != null && tProp != null)
                         tSlot.texture = tProp.value.texture;

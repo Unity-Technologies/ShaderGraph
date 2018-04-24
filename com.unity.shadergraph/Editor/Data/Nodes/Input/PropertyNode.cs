@@ -60,7 +60,7 @@ namespace UnityEditor.ShaderGraph
             }
             else if (property is Texture2DShaderProperty)
             {
-                AddSlot(new Texture2DMaterialSlot(OutputSlotId, property.displayName, "Out", SlotType.Output));
+                AddSlot(new TextureMaterialSlot(OutputSlotId, property.displayName, "Out", SlotType.Output));
                 RemoveSlotsNameNotMatching(new[] {OutputSlotId});
             }
             else if (property is Texture3DShaderProperty)

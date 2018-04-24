@@ -194,10 +194,10 @@ namespace UnityEditor.ShaderGraph.Drawing
             else if (property is Texture2DShaderProperty)
             {
                 var textureProperty = (Texture2DShaderProperty)property;
-                var field = new ObjectField { value = textureProperty.value.texture, objectType = typeof(Texture2D) };
+                var field = new ObjectField { value = textureProperty.value.texture, objectType = typeof(Texture) };
                 field.OnValueChanged(evt =>
                 {
-                    textureProperty.value.texture = (Texture2D)evt.newValue;
+                    textureProperty.value.texture = (Texture)evt.newValue;
                     DirtyNodes();
                 });
                 AddRow("Default", field);

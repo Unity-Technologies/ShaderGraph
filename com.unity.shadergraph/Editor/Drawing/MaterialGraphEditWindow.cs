@@ -310,7 +310,7 @@ namespace UnityEditor.ShaderGraph.Drawing
                 IShaderProperty prop;
                 switch (fromSlot.concreteValueType)
                 {
-                    case ConcreteSlotValueType.Texture2D:
+                    case ConcreteSlotValueType.Texture:
                         prop = new Texture2DShaderProperty();
                         break;
                     case ConcreteSlotValueType.Texture3D:

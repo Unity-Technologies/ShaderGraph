@@ -25,17 +25,17 @@ namespace UnityEditor.ShaderGraph
 
         public sealed override void UpdateNodeAfterDeserialization()
         {
-            AddSlot(new Texture2DMaterialSlot(OutputSlotId, kOutputSlotName, kOutputSlotName, SlotType.Output));
+            AddSlot(new TextureMaterialSlot(OutputSlotId, kOutputSlotName, kOutputSlotName, SlotType.Output));
             RemoveSlotsNameNotMatching(new[] { OutputSlotId });
         }
 
         [SerializeField]
         private SerializableTexture m_Texture = new SerializableTexture();
 
-        [Texture2DControl("")]
-        public Texture2D texture
+        [TextureControl("")]
+        public Texture texture
         {
-            get { return (Texture2D)m_Texture.texture; }
+            get { return (Texture)m_Texture.texture; }
             set
             {
                 if (m_Texture.texture == value)

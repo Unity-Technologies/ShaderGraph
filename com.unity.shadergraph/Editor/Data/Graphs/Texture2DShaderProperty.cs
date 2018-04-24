@@ -70,7 +70,7 @@ namespace UnityEditor.ShaderGraph
 
         public override INode ToConcreteNode()
         {
-            return new Texture2DAssetNode { texture = (Texture2D)value.texture };
+            return new Texture2DAssetNode { texture = (Texture)value.texture };
         }
     }
 }

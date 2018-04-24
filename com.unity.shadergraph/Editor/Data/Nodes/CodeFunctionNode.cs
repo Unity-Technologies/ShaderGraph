@@ -170,7 +170,7 @@ namespace UnityEditor.ShaderGraph
             }
             if (t == typeof(Texture2D))
             {
-                return SlotValueType.Texture2D;
+                return SlotValueType.Texture;
             }
             if (t == typeof(Cubemap))
             {

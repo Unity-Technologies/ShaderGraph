@@ -1,9 +1,9 @@
-Texture2DSlotControlView {
+TextureSlotControlView {
     flex-direction: row;
     align-items: center;
 }
 
-Texture2DSlotControlView > ObjectField {
+TextureSlotControlView > ObjectField {
     margin-top: 0;
     margin-bottom: 0;
     margin-left: 0;

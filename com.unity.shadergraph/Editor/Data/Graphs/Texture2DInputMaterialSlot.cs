@@ -8,7 +8,7 @@ using UnityEngine.Experimental.UIElements;
 namespace UnityEditor.ShaderGraph
 {
     [Serializable]
-    public class Texture2DInputMaterialSlot : Texture2DMaterialSlot
+    public class TextureInputMaterialSlot : TextureMaterialSlot
     {
         [SerializeField]
         private SerializableTexture m_Texture = new SerializableTexture();
@@ -19,10 +19,10 @@ namespace UnityEditor.ShaderGraph
             set { m_Texture.texture = value; }
         }
 
-        public Texture2DInputMaterialSlot()
+        public TextureInputMaterialSlot()
         {}
 
-        public Texture2DInputMaterialSlot(
+        public TextureInputMaterialSlot(
             int slotId,
             string displayName,
             string shaderOutputName,
@@ -33,7 +33,7 @@ namespace UnityEditor.ShaderGraph
 
         public override VisualElement InstantiateControl()
         {
-            return new Texture2DSlotControlView(this);
+            return new TextureSlotControlView(this);
         }
 
         public override string GetDefaultValue(GenerationMode generationMode)
@@ -71,7 +71,7 @@ namespace UnityEditor.ShaderGraph
 
         public override void CopyValuesFrom(MaterialSlot foundSlot)
         {
-            var slot = foundSlot as Texture2DInputMaterialSlot;
+            var slot = foundSlot as TextureInputMaterialSlot;
             if (slot != null)
                 m_Texture = slot.m_Texture;
         }

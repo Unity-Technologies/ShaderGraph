@@ -7,38 +7,38 @@ using UnityEngine.Experimental.UIElements;
 namespace UnityEditor.ShaderGraph.Drawing.Controls
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class Texture2DControlAttribute : Attribute, IControlAttribute
+    public class TextureControlAttribute : Attribute, IControlAttribute
     {
         string m_Label;
 
-        public Texture2DControlAttribute(string label = null)
+        public TextureControlAttribute(string label = null)
         {
             m_Label = label;
         }
 
         public VisualElement InstantiateControl(AbstractMaterialNode node, PropertyInfo propertyInfo)
         {
-            return new Texture2DControlView(m_Label, node, propertyInfo);
+            return new TextureControlView(m_Label, node, propertyInfo);
         }
     }
 
-    public class Texture2DControlView : VisualElement
+    public class TextureControlView : VisualElement
     {
         AbstractMaterialNode m_Node;
         PropertyInfo m_PropertyInfo;
 
-        public Texture2DControlView(string label, AbstractMaterialNode node, PropertyInfo propertyInfo)
+        public TextureControlView(string label, AbstractMaterialNode node, PropertyInfo propertyInfo)
         {
             m_Node = node;
             m_PropertyInfo = propertyInfo;
-            if (propertyInfo.PropertyType != typeof(Texture2D))
-                throw new ArgumentException("Property must be of type Texture 2D.", "propertyInfo");
+            if (propertyInfo.PropertyType != typeof(Texture))
+                throw new ArgumentException("Property must be of type Texture.", "propertyInfo");
             label = label ?? ObjectNames.NicifyVariableName(propertyInfo.Name);
 
             if (!string.IsNullOrEmpty(label))
                 Add(new Label(label));
 
-            var textureField = new ObjectField { value = (Texture2D)m_PropertyInfo.GetValue(m_Node, null), objectType = typeof(Texture2D) };
+            var textureField = new ObjectField { value = (Texture)m_PropertyInfo.GetValue(m_Node, null), objectType = typeof(Texture) };
             textureField.OnValueChanged(OnChange);
             Add(textureField);
         }
