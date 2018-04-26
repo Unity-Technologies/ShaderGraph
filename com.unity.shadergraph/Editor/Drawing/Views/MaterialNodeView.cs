@@ -32,8 +32,6 @@ namespace UnityEditor.ShaderGraph.Drawing
         VisualElement m_SettingsButton;
         VisualElement m_Settings;
         VisualElement m_NodeSettingsView;
-        VisualElement m_Title;
-        IconBadge m_WrongPipeline;
 
         public void Initialize(AbstractMaterialNode inNode, PreviewManager previewManager, IEdgeConnectorListener connectorListener)
         {
@@ -149,10 +147,10 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 if (!masterNode.IsPipelineCompatible(RenderPipelineManager.currentPipeline))
                 {
-                    m_WrongPipeline = IconBadge.CreateError("The current render pipeline is not compatible with this node preview.");
-                    Add(m_WrongPipeline);
-                    m_Title = this.Q("title");
-                    m_WrongPipeline.AttachTo(m_Title, SpriteAlignment.LeftCenter);
+                    IconBadge wrongPipeline = IconBadge.CreateError("The current render pipeline is not compatible with this node preview.");
+                    Add(wrongPipeline);
+                    VisualElement title = this.Q("title");
+                    wrongPipeline.AttachTo(title, SpriteAlignment.LeftCenter);
                 }
             }
 
