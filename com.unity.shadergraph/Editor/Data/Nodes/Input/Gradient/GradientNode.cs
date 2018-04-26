@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.ShaderGraph.Drawing.Controls;
@@ -92,7 +92,7 @@ namespace UnityEditor.ShaderGraph
             RemoveSlotsNameNotMatching(new[] { OutputSlotId });
         }
 
-        public void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)
+        public void GenerateNodeFunction(FunctionRegistry registry, GraphContext graphContext, GenerationMode generationMode)
         {
             if(generationMode == GenerationMode.Preview)
             {
