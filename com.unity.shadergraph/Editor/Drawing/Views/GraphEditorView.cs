@@ -281,11 +281,18 @@ namespace UnityEditor.ShaderGraph.Drawing
                 AddNode(node);
             }
 
-            foreach (var node in m_Graph.pastedNodes)
+            var pastedSelection = new List<ISelectable>();
+
+            if (m_Graph.pastedNodes.Any())
             {
-                var nodeView = m_GraphView.nodes.ToList().OfType<MaterialNodeView>().FirstOrDefault(p => p.node != null && p.node.guid == node.guid);
-                m_GraphView.AddToSelection(nodeView);
+                foreach (var node in m_Graph.pastedNodes)
+                {
+                    var nodeView = m_GraphView.nodes.ToList().OfType<MaterialNodeView>().FirstOrDefault(p => p.node != null && p.node.guid == node.guid);
+                    pastedSelection.Add(nodeView);
+                }
             }
+
+            m_GraphView.SavePersistentData();
 
             var nodesToUpdate = m_NodeViewHashSet;
             nodesToUpdate.Clear();
@@ -314,13 +321,21 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 var edgeView = AddEdge(edge);
                 if (edgeView != null)
+                {
                     nodesToUpdate.Add((MaterialNodeView)edgeView.input.node);
+                    pastedSelection.Add(edgeView);
+                }
             }
 
             foreach (var node in nodesToUpdate)
                 node.UpdatePortInputVisibilities();
 
             UpdateEdgeColors(nodesToUpdate);
+
+            foreach (var selectable in pastedSelection)
+            {
+                m_GraphView.AddToSelection(selectable);
+            }
         }
 
         void AddNode(INode node)
