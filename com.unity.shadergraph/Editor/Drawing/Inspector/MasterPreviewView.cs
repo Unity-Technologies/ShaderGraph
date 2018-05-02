@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -24,9 +24,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector
         Image m_PreviewTextureView;
 
         Vector2 m_PreviewScrollPosition;
-        ObjectField m_PreviewMeshPicker;
 
-        IMasterNode m_MasterNode;
         Mesh m_PreviousMesh;
 
         List<string> m_DoNotShowPrimitives = new List<string>( new string[] {PrimitiveType.Plane.ToString()});

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Experimental.UIElements;
@@ -49,7 +49,6 @@ namespace UnityEditor.ShaderGraph.Drawing
             public int compatibleSlotId;
         }
 
-        List<int> m_Ids;
         List<ISlot> m_Slots = new List<ISlot>();
 
         public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)

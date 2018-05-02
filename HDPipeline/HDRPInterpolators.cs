@@ -12,7 +12,9 @@ namespace UnityEditor.ShaderGraph
     {
         struct AttributesMesh
         {
-            [Semantic("POSITION")]              Vector3 positionOS;
+            // disabling "warning CS0169: The field 'xxx' is never used" as these are optional.
+            #pragma warning disable 0169
+            [Semantic("POSITION")]             Vector3 positionOS;
             [Semantic("NORMAL")][Optional]     Vector3 normalOS;
             [Semantic("TANGENT")][Optional]    Vector4 tangentOS;       // Stores bi-tangent sign in w
             [Semantic("TEXCOORD0")][Optional]  Vector2 uv0;
@@ -20,10 +22,12 @@ namespace UnityEditor.ShaderGraph
             [Semantic("TEXCOORD2")][Optional]  Vector2 uv2;
             [Semantic("TEXCOORD3")][Optional]  Vector2 uv3;
             [Semantic("COLOR")][Optional]      Vector4 color;
+            #pragma warning restore  0169
         };
 
         struct VaryingsMeshToPS
         {
+            #pragma warning disable 0169
             [Semantic("SV_Position")]           Vector4 positionCS;
             [Optional]                          Vector3 positionWS;
             [Optional]                          Vector3 normalWS;
@@ -34,7 +38,9 @@ namespace UnityEditor.ShaderGraph
             [Optional]                          Vector2 texCoord3;
             [Optional]                          Vector4 color;
             [Optional] [Semantic("FRONT_FACE_SEMANTIC")] [OverrideType("FRONT_FACE_TYPE")] [PreprocessorIf("SHADER_STAGE_FRAGMENT")]
-                                                bool cullFace;
+                                                bool cullFace;
+            #pragma warning restore 0169
+
             public static Dependency[] tessellationDependencies = new Dependency[]
             {
                 new Dependency("VaryingsMeshToPS.positionWS",       "VaryingsMeshToDS.positionWS"),
@@ -62,6 +68,7 @@ namespace UnityEditor.ShaderGraph
 
         struct VaryingsMeshToDS
         {
+            #pragma warning disable 0169
             Vector3 positionWS;
             Vector3 normalWS;
             [Optional]      Vector4 tangentWS;
@@ -70,6 +77,7 @@ namespace UnityEditor.ShaderGraph
             [Optional]      Vector2 texCoord2;
             [Optional]      Vector2 texCoord3;
             [Optional]      Vector4 color;
+            #pragma warning restore 0169
 
             public static Dependency[] tessellationDependencies = new Dependency[]
             {
@@ -100,6 +108,7 @@ namespace UnityEditor.ShaderGraph
 
         struct GraphInputs
         {
+            #pragma warning disable 0169
             [Optional] Vector3 ObjectSpaceNormal;
             [Optional] Vector3 ViewSpaceNormal;
             [Optional] Vector3 WorldSpaceNormal;
@@ -131,6 +140,7 @@ namespace UnityEditor.ShaderGraph
             [Optional] Vector4 uv2;
             [Optional] Vector4 uv3;
             [Optional] Vector4 vertexColor;
+            #pragma warning restore 0169
 
             public static Dependency[] dependencies = new Dependency[]
             {
