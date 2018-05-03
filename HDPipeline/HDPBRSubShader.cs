@@ -600,7 +600,7 @@ namespace UnityEditor.ShaderGraph
             graph.AddShaderChunk(shaderProperties.GetPropertiesDeclaration(2), false);
 
             graph.AddShaderChunk("// Graph evaluation", false);
-            graph.AddShaderChunk(graphEvalFunction.GetShaderString(2), false);
+            graph.AddGenerator(graphEvalFunction);
 
             var blendingVisitor = new ShaderGenerator();
             var cullingVisitor = new ShaderGenerator();
