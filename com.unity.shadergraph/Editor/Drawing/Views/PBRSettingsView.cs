@@ -49,7 +49,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 row.Add(new Toggle(null), (toggle) =>
                 {
-                    toggle.value = m_Node.twoSided.isOn;
+                    toggle.SetValue(m_Node.twoSided.isOn);
                     toggle.OnToggle(ChangeTwoSided);
                 });
             });
