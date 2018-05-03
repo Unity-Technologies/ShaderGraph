@@ -132,7 +132,7 @@ namespace UnityEditor.ShaderGraph
         {
             get { return true; }
         }
-        
+
         public virtual bool allowedInMainGraph
         {
             get { return true; }
@@ -159,7 +159,7 @@ namespace UnityEditor.ShaderGraph
             {
                 if (m_NameForDefaultVariableName != name || m_GuidForDefaultVariableName != guid)
                 {
-                    m_DefaultVariableName = string.Format("{0}_{1}", NodeUtils.GetHLSLSafeName(name), GuidEncoder.Encode(guid));
+                    m_DefaultVariableName = string.Format("{0}_{1}", NodeUtils.GetHLSLSafeName(name ?? "node"), GuidEncoder.Encode(guid));
                     m_NameForDefaultVariableName = name;
                     m_GuidForDefaultVariableName = guid;
                 }
@@ -251,10 +251,10 @@ namespace UnityEditor.ShaderGraph
 
             var fromCount = SlotValueHelper.GetChannelCount(from);
             var toCount = SlotValueHelper.GetChannelCount(to);
-            
+
             if (toCount > 0 && fromCount > 0)
                 return true;
-            
+
             return false;
         }
 
