@@ -29,17 +29,16 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             m_ExposedToogle = new Toggle(() =>
             {
-                property.generatePropertyBlock = m_ExposedToogle.value;
+                property.generatePropertyBlock = m_ExposedToogle.GetValue();
                 DirtyNodes(ModificationScope.Graph);
             });
-            m_ExposedToogle.value = property.generatePropertyBlock;
+            m_ExposedToogle.SetValue(property.generatePropertyBlock);
             AddRow("Exposed", m_ExposedToogle);
 
             m_ReferenceNameField = new TextField(512, false, false, ' ');
             m_ReferenceNameField.AddStyleSheetPath("Styles/PropertyNameReferenceField");
             AddRow("Reference", m_ReferenceNameField);
             m_ReferenceNameField.value = property.referenceName;
-            m_ReferenceNameField.isDelayed = true;
             m_ReferenceNameField.OnValueChanged(newName =>
             {
                 string newReferenceName = m_Graph.SanitizePropertyReferenceName(newName.newValue, property.guid);
@@ -284,7 +283,7 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         void UpdateReferenceNameResetMenu()
         {
-            if (string.IsNullOrEmpty(m_Property.overrideReferenceName))
+            if (string.IsNullOrEmpty(m_Property.overrideReferenceName) && m_ResetReferenceMenu != null)
             {
                 this.RemoveManipulator(m_ResetReferenceMenu);
                 m_ResetReferenceMenu = null;
