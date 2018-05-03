@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor.Graphing;
 using UnityEditor.ShaderGraph.Drawing.Slots;
 using UnityEngine;
@@ -15,6 +16,8 @@ namespace UnityEditor.ShaderGraph
         [SerializeField]
         private Vector3 m_DefaultValue;
 
+        string[] m_Labels;
+
         public Vector3MaterialSlot()
         {
         }
@@ -26,10 +29,14 @@ namespace UnityEditor.ShaderGraph
             SlotType slotType,
             Vector3 value,
             ShaderStage shaderStage = ShaderStage.Dynamic,
+            string label1 = "X",
+            string label2 = "Y",
+            string label3 = "Z",
             bool hidden = false)
             : base(slotId, displayName, shaderOutputName, slotType, shaderStage, hidden)
         {
             m_Value = value;
+            m_Labels = new[] { label1, label2, label3 };
         }
 
         public Vector3 defaultValue { get { return m_DefaultValue; } }
@@ -42,7 +49,7 @@ namespace UnityEditor.ShaderGraph
 
         public override VisualElement InstantiateControl()
         {
-            return new MultiFloatSlotControlView(owner, 3, () => value, (newValue) => value = newValue);
+            return new MultiFloatSlotControlView(owner, m_Labels, () => value, (newValue) => value = newValue);
         }
 
         protected override string ConcreteSlotValueAsVariable(AbstractMaterialNode.OutputPrecision precision)
@@ -68,14 +75,14 @@ namespace UnityEditor.ShaderGraph
             properties.AddShaderProperty(property);
         }
 
-        public override PreviewProperty GetPreviewProperty(string name)
+        public override void GetPreviewProperties(List<PreviewProperty> properties, string name)
         {
             var pp = new PreviewProperty(PropertyType.Vector3)
             {
                 name = name,
                 vector4Value = new Vector4(value.x, value.y, value.z, 0)
             };
-            return pp;
+            properties.Add(pp);
         }
 
         public override SlotValueType valueType { get { return SlotValueType.Vector3; } }

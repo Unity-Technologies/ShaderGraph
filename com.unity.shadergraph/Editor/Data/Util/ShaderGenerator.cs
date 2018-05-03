@@ -86,7 +86,7 @@ namespace UnityEditor.ShaderGraph
             return sb.ToString();
         }
 
-        internal static string GetTemplatePath(string templateName)
+        public static string GetTemplatePath(string templateName)
         {
             var path = new List<string>
             {
@@ -142,7 +142,7 @@ namespace UnityEditor.ShaderGraph
                         case ConcreteSlotValueType.Vector1:
                             return string.Format("({0}.xxx)", rawOutput);
                         case ConcreteSlotValueType.Vector2:
-                            return string.Format("({0}3({1}.x, {1}.y, 0.0))", node.precision, rawOutput);
+                            return string.Format("({0}3({1}, 0.0))", node.precision, rawOutput);
                         case ConcreteSlotValueType.Vector4:
                             return string.Format("({0}.xyz)", rawOutput);
                         default:
@@ -154,9 +154,9 @@ namespace UnityEditor.ShaderGraph
                         case ConcreteSlotValueType.Vector1:
                             return string.Format("({0}.xxxx)", rawOutput);
                         case ConcreteSlotValueType.Vector2:
-                            return string.Format("({0}4({1}.x, {1}.y, 0.0, 1.0))", node.precision, rawOutput);
+                            return string.Format("({0}4({1}, 0.0, 1.0))", node.precision, rawOutput);
                         case ConcreteSlotValueType.Vector3:
-                            return string.Format("({0}4({1}.x, {1}.y, {1}.z, 1.0))", node.precision, rawOutput);
+                            return string.Format("({0}4({1}, 1.0))", node.precision, rawOutput);
                         default:
                             return kErrorString;
                     }
@@ -452,7 +452,7 @@ namespace UnityEditor.ShaderGraph
             {
                 var name = preferedCoordinateSpace.ToVariableName(InterpolatorType.Tangent);
                 interpolators.AddShaderChunk(string.Format("float3 {0} : TEXCOORD{1};", name, interpolatorIndex), false);
-                vertexShader.AddShaderChunk(string.Format("o.{0} = {1};", name, ConvertBetweenSpace("v.tangent", CoordinateSpace.Object, preferedCoordinateSpace, InputType.Vector)), false);
+                vertexShader.AddShaderChunk(string.Format("o.{0} = {1};", name, ConvertBetweenSpace("v.tangent.xyz", CoordinateSpace.Object, preferedCoordinateSpace, InputType.Vector)), false);
                 pixelShader.AddShaderChunk(string.Format("float3 {0} = IN.{0};", name), false);
                 interpolatorIndex++;
             }
@@ -485,7 +485,7 @@ namespace UnityEditor.ShaderGraph
             {
                 var name = preferedCoordinateSpace.ToVariableName(InterpolatorType.Position);
                 interpolators.AddShaderChunk(string.Format("float3 {0} : TEXCOORD{1};", name, interpolatorIndex), false);
-                vertexShader.AddShaderChunk(string.Format("o.{0} = {1};", name, ConvertBetweenSpace("v.vertex", CoordinateSpace.Object, preferedCoordinateSpace, InputType.Position)), false);
+                vertexShader.AddShaderChunk(string.Format("o.{0} = {1}.xyz;", name, ConvertBetweenSpace("v.vertex", CoordinateSpace.Object, preferedCoordinateSpace, InputType.Position)), false);
                 pixelShader.AddShaderChunk(string.Format("float3 {0} = IN.{0};", name), false);
                 interpolatorIndex++;
             }
@@ -651,39 +651,63 @@ namespace UnityEditor.ShaderGraph
             return res;
         }
 
-        public static SurfaceMaterialOptions GetMaterialOptionsFromAlphaMode(AlphaMode alphaMode)
+        public static SurfaceMaterialOptions GetMaterialOptions(SurfaceType surfaceType, AlphaMode alphaMode, bool twoSided)
         {
             var materialOptions = new SurfaceMaterialOptions();
-            switch (alphaMode)
+            switch (surfaceType)
             {
-                case AlphaMode.Opaque:
+                case SurfaceType.Opaque:
                     materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
                     materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
-                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
+                    materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
                     materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
                     materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
                     materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
                     materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
                     break;
-                case AlphaMode.AlphaBlend:
-                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
-                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
-                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
-                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
-                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
-                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
-                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
-                    break;
-                case AlphaMode.AdditiveBlend:
-                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
-                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
-                    materialOptions.cullMode = SurfaceMaterialOptions.CullMode.Back;
-                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
-                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
-                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
-                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                case SurfaceType.Transparent:
+                    switch (alphaMode)
+                    {
+                        case AlphaMode.Alpha:
+                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
+                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
+                            materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                            break;
+                        case AlphaMode.Premultiply:
+                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
+                            materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                            break;
+                        case AlphaMode.Additive:
+                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
+                            materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                            break;
+                        case AlphaMode.Multiply:
+                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.DstColor;
+                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
+                            materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                            break;
+                    }
                     break;
             }
+
             return materialOptions;
         }
 

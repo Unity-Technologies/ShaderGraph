@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UnityEditor.ShaderGraph
 {
-    static class GraphUtil
+    public static class GraphUtil
     {
         internal static string ConvertCamelCase(string text, bool preserveAcronyms)
         {
@@ -20,7 +20,7 @@ namespace UnityEditor.ShaderGraph
             {
                 if (char.IsUpper(text[i]))
                     if ((text[i - 1] != ' ' && !char.IsUpper(text[i - 1])) ||
-                        (preserveAcronyms && char.IsUpper(text[i - 1]) && 
+                        (preserveAcronyms && char.IsUpper(text[i - 1]) &&
                         i < text.Length - 1 && !char.IsUpper(text[i + 1])))
                         newText.Append(' ');
                 newText.Append(text[i]);
@@ -28,7 +28,7 @@ namespace UnityEditor.ShaderGraph
             return newText.ToString();
         }
 
-        internal static void GenerateApplicationVertexInputs(ShaderGraphRequirements graphRequiements, ShaderGenerator vertexInputs)
+        public static void GenerateApplicationVertexInputs(ShaderGraphRequirements graphRequiements, ShaderGenerator vertexInputs)
         {
             vertexInputs.AddShaderChunk("struct GraphVertexInput", false);
             vertexInputs.AddShaderChunk("{", false);
@@ -139,7 +139,7 @@ namespace UnityEditor.ShaderGraph
             var slots = new List<MaterialSlot>();
             foreach (var activeNode in isUber ? activeNodeList.Where(n => ((AbstractMaterialNode)n).hasPreview) : ((INode)node).ToEnumerable())
             {
-                if (activeNode is IMasterNode)
+                if (activeNode is IMasterNode || activeNode is SubGraphOutputNode)
                     slots.AddRange(activeNode.GetInputSlots<MaterialSlot>());
                 else
                     slots.AddRange(activeNode.GetOutputSlots<MaterialSlot>());
@@ -208,7 +208,7 @@ namespace UnityEditor.ShaderGraph
             return results;
         }
 
-        internal static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster)
+        public static void GenerateSurfaceDescriptionStruct(ShaderGenerator surfaceDescriptionStruct, List<MaterialSlot> slots, bool isMaster)
         {
             surfaceDescriptionStruct.AddShaderChunk("struct SurfaceDescription{", false);
             surfaceDescriptionStruct.Indent();
@@ -226,7 +226,7 @@ namespace UnityEditor.ShaderGraph
             surfaceDescriptionStruct.AddShaderChunk("};", false);
         }
 
-        internal static void GenerateSurfaceDescription(
+        public static void GenerateSurfaceDescription(
             List<INode> activeNodeList,
             AbstractMaterialNode masterNode,
             AbstractMaterialGraph graph,
@@ -263,6 +263,19 @@ namespace UnityEditor.ShaderGraph
                     var outputSlot = activeNode.GetOutputSlots<MaterialSlot>().FirstOrDefault();
                     if (outputSlot != null)
                         surfaceDescriptionFunction.AddShaderChunk(String.Format("if ({0} == {1}) {{ surface.PreviewOutput = {2}; return surface; }}", outputIdProperty.referenceName, activeNode.tempId.index, ShaderGenerator.AdaptNodeOutputForPreview(activeNode, outputSlot.id, activeNode.GetVariableNameForSlot(outputSlot.id))), false);
+                }
+
+                // In case of the subgraph output node, the preview is generated
+                // from the first input to the node.
+                if (activeNode is SubGraphOutputNode)
+                {
+                    var inputSlot = activeNode.GetInputSlots<MaterialSlot>().FirstOrDefault();
+                    if (inputSlot != null)
+                    {
+                        var foundEdges = graph.GetEdges(inputSlot.slotReference).ToArray();
+                        string slotValue = foundEdges.Any() ? activeNode.GetSlotValue(inputSlot.id, mode) : inputSlot.GetDefaultValue(mode);
+                        surfaceDescriptionFunction.AddShaderChunk(String.Format("if ({0} == {1}) {{ surface.PreviewOutput = {2}; return surface; }}", outputIdProperty.referenceName, activeNode.tempId.index, slotValue), false);
+                    }
                 }
 
                 activeNode.CollectShaderProperties(shaderProperties, mode);
@@ -318,7 +331,7 @@ namespace UnityEditor.ShaderGraph
                 s_LegacyTypeRemapping = new Dictionary<SerializationHelper.TypeSerializationInfo, SerializationHelper.TypeSerializationInfo>();
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    foreach (var type in assembly.GetTypes())
+                    foreach (var type in assembly.GetTypesOrNothing())
                     {
                         if (type.IsAbstract)
                             continue;

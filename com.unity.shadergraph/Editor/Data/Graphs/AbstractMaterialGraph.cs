@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor.Graphing;
+using UnityEditor.Graphing.Util;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -94,6 +95,14 @@ namespace UnityEditor.ShaderGraph
             get { return m_RemovedNodes; }
         }
 
+        [NonSerialized]
+        List<INode> m_PastedNodes = new List<INode>();
+
+        public IEnumerable<INode> pastedNodes
+        {
+            get { return m_PastedNodes; }
+        }
+
         #endregion
 
         #region Edge data
@@ -139,10 +148,26 @@ namespace UnityEditor.ShaderGraph
             set { m_PreviewData = value; }
         }
 
+        [SerializeField]
+        string m_Path;
+
+        public string path
+        {
+            get { return m_Path; }
+            set
+            {
+                if (m_Path == value)
+                    return;
+                m_Path = value;
+                owner.RegisterCompleteObjectUndo("Change Path");
+            }
+        }
+
         public void ClearChanges()
         {
             m_AddedNodes.Clear();
             m_RemovedNodes.Clear();
+            m_PastedNodes.Clear();
             m_AddedEdges.Clear();
             m_RemovedEdges.Clear();
             m_AddedProperties.Clear();
@@ -312,9 +337,11 @@ namespace UnityEditor.ShaderGraph
 
         public INode GetNodeFromTempId(Identifier tempId)
         {
+            if (tempId.index > m_Nodes.Count)
+                throw new ArgumentException("Trying to retrieve a node using an identifier that does not exist.");
             var node = m_Nodes[tempId.index];
             if (node == null)
-                throw new Exception("Index does not contain a node.");
+                throw new Exception("Trying to retrieve a node using an identifier that does not exist.");
             if (node.tempId.version != tempId.version)
                 throw new Exception("Trying to retrieve a node that was removed from the graph.");
             return node;
@@ -369,11 +396,23 @@ namespace UnityEditor.ShaderGraph
             if (m_Properties.Contains(property))
                 return;
 
-            property.displayName = property.displayName.Trim();
-            if (m_Properties.Any(p => p.displayName == property.displayName))
+            m_Properties.Add(property);
+            m_AddedProperties.Add(property);
+        }
+
+        public string SanitizePropertyName(string displayName, Guid guid = default(Guid))
+        {
+            displayName = displayName.Trim();
+            if (m_Properties.Any(p => p.displayName == displayName && p.guid != guid))
             {
-                var regex = new Regex(@"^" + Regex.Escape(property.displayName) + @" \((\d+)\)$");
-                var existingDuplicateNumbers = m_Properties.Select(p => regex.Match(p.displayName)).Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).Where(n => n > 0).ToList();
+                // Strip out the " (n)" part of the name.
+                var baseRegex = new Regex(@"^(.*) \((\d+)\)$");
+                var baseMatch = baseRegex.Match(displayName);
+                if (baseMatch.Success)
+                    displayName = baseMatch.Groups[1].Value;
+
+                var regex = new Regex(@"^" + Regex.Escape(displayName) + @" \((\d+)\)$");
+                var existingDuplicateNumbers = m_Properties.Where(p => p.guid != guid).Select(p => regex.Match(p.displayName)).Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).Where(n => n > 0).Distinct().ToList();
 
                 var duplicateNumber = 1;
                 existingDuplicateNumbers.Sort();
@@ -389,11 +428,10 @@ namespace UnityEditor.ShaderGraph
                         }
                     }
                 }
-                property.displayName = string.Format("{0} ({1})", property.displayName, duplicateNumber);
+                displayName = string.Format("{0} ({1})", displayName, duplicateNumber);
             }
 
-            m_Properties.Add(property);
-            m_AddedProperties.Add(property);
+            return displayName;
         }
 
         public void RemoveShaderProperty(Guid guid)
@@ -498,7 +536,7 @@ namespace UnityEditor.ShaderGraph
                     outputSlot = outputNode.FindOutputSlot<MaterialSlot>(edge.outputSlot.slotId);
                     inputSlot = inputNode.FindInputSlot<MaterialSlot>(edge.inputSlot.slotId);
                 }
-                
+
                 if (outputNode == null
                     || inputNode == null
                     || outputSlot == null
@@ -571,6 +609,71 @@ namespace UnityEditor.ShaderGraph
 
             foreach (var edge in other.edges)
                 ConnectNoValidate(edge.outputSlot, edge.inputSlot);
+
+            ValidateGraph();
+        }
+
+        internal void PasteGraph(CopyPasteGraph graphToPaste, List<INode> remappedNodes, List<IEdge> remappedEdges)
+        {
+            var nodeGuidMap = new Dictionary<Guid, Guid>();
+            foreach (var node in graphToPaste.GetNodes<INode>())
+            {
+                INode pastedNode = node;
+
+                var oldGuid = node.guid;
+                var newGuid = node.RewriteGuid();
+                nodeGuidMap[oldGuid] = newGuid;
+
+                // Check if the property nodes need to be made into a concrete node.
+                if (node is PropertyNode)
+                {
+                    PropertyNode propertyNode = (PropertyNode)node;
+
+                    // If the property is not in the current graph, do check if the
+                    // property can be made into a concrete node.
+                    if (!m_Properties.Select(x => x.guid).Contains(propertyNode.propertyGuid))
+                    {
+                        // If the property is in the serialized paste graph, make the property node into a property node.
+                        var pastedGraphMetaProperties = graphToPaste.metaProperties.Where(x => x.guid == propertyNode.propertyGuid);
+                        if (pastedGraphMetaProperties.Any())
+                        {
+                            pastedNode = pastedGraphMetaProperties.FirstOrDefault().ToConcreteNode();
+                            pastedNode.drawState = node.drawState;
+                            nodeGuidMap[oldGuid] = pastedNode.guid;
+                        }
+                    }
+                }
+
+                var drawState = node.drawState;
+                var position = drawState.position;
+                position.x += 30;
+                position.y += 30;
+                drawState.position = position;
+                node.drawState = drawState;
+                remappedNodes.Add(pastedNode);
+                AddNode(pastedNode);
+
+                // add the node to the pasted node list
+                m_PastedNodes.Add(pastedNode);
+            }
+
+            // only connect edges within pasted elements, discard
+            // external edges.
+            foreach (var edge in graphToPaste.edges)
+            {
+                var outputSlot = edge.outputSlot;
+                var inputSlot = edge.inputSlot;
+
+                Guid remappedOutputNodeGuid;
+                Guid remappedInputNodeGuid;
+                if (nodeGuidMap.TryGetValue(outputSlot.nodeGuid, out remappedOutputNodeGuid)
+                    && nodeGuidMap.TryGetValue(inputSlot.nodeGuid, out remappedInputNodeGuid))
+                {
+                    var outputSlotRef = new SlotReference(remappedOutputNodeGuid, outputSlot.slotId);
+                    var inputSlotRef = new SlotReference(remappedInputNodeGuid, inputSlot.slotId);
+                    remappedEdges.Add(Connect(outputSlotRef, inputSlotRef));
+                }
+            }
 
             ValidateGraph();
         }

@@ -37,7 +37,12 @@ namespace UnityEditor.ShaderGraph
 
         void OnRemove()
         {
-            m_Node.RemoveSlot();
+            // tell the user that they might cchange things up.
+            if (EditorUtility.DisplayDialog("Sub Graph Will Change", "If you remove a slot and save the sub graph, you might change other graphs that are using this sub graph.\n\nDo you want to continue?", "Yes", "No"))
+            {
+                m_Node.owner.owner.RegisterCompleteObjectUndo("Removing Slot");
+                m_Node.RemoveSlot();
+            }
         }
     }
 
@@ -49,6 +54,16 @@ namespace UnityEditor.ShaderGraph
         public SubGraphOutputNode()
         {
             name = "SubGraphOutputs";
+        }
+
+        public override bool hasPreview
+        {
+            get { return true; }
+        }
+
+        public override PreviewMode previewMode
+        {
+            get { return PreviewMode.Preview3D; }
         }
 
         public virtual int AddSlot()
@@ -73,7 +88,6 @@ namespace UnityEditor.ShaderGraph
                 visitor.AddShaderChunk(string.Format("{0} = {1};", slot.shaderOutputName, GetSlotValue(slot.id, generationMode)), true);
         }
 
-
         public IEnumerable<MaterialSlot> graphOutputs
         {
             get
@@ -81,6 +95,5 @@ namespace UnityEditor.ShaderGraph
                 return NodeExtensions.GetInputSlots<MaterialSlot>(this).OrderBy(x=>x.id);
             }
         }
-
     }
 }

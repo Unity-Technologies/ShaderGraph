@@ -11,7 +11,7 @@ namespace UnityEditor.ShaderGraph
     public class SubGraphNode : AbstractMaterialNode
         , IGeneratesBodyCode
         , IOnAssetEnabled
-        , IGeneratesFunction 
+        , IGeneratesFunction
         , IMayRequireNormal
         , IMayRequireTangent
         , IMayRequireBitangent
@@ -103,6 +103,16 @@ namespace UnityEditor.ShaderGraph
             name = "Sub-graph";
         }
 
+        public override bool allowedInSubGraph
+        {
+            get { return false; }
+        }
+
+        public override string documentationURL
+        {
+            get { return "https://github.com/Unity-Technologies/ShaderGraph/wiki/Sub-graph-Node"; }
+        }
+
         public void GenerateNodeCode(ShaderGenerator visitor, GenerationMode generationMode)
         {
             if (referencedGraph == null)
@@ -167,6 +177,9 @@ namespace UnityEditor.ShaderGraph
                         break;
                     case PropertyType.Cubemap:
                         slotType = SlotValueType.Cubemap;
+                        break;
+                    case PropertyType.Gradient:
+                        slotType = SlotValueType.Gradient;
                         break;
                     case PropertyType.Vector1:
                         slotType = SlotValueType.Vector1;
@@ -265,7 +278,7 @@ namespace UnityEditor.ShaderGraph
         private string SubGraphFunctionName()
         {
             var functionName = subGraphAsset != null ? NodeUtils.GetHLSLSafeName(subGraphAsset.name) : "ERROR";
-            return string.Format("{0}_{1}", functionName, GuidEncoder.Encode(referencedGraph.guid));
+            return string.Format("sg_{0}_{1}", functionName, GuidEncoder.Encode(referencedGraph.guid));
         }
 
         public virtual void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)

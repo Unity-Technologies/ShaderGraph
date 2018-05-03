@@ -41,14 +41,24 @@ namespace UnityEditor.ShaderGraph.Drawing.Controls
 
             var intField = new IntegerField { value = (int)m_PropertyInfo.GetValue(m_Node, null) };
             intField.OnValueChanged(OnChange);
+
             Add(intField);
         }
 
+#if UNITY_2018_1
         void OnChange(ChangeEvent<long> evt)
+#else
+        void OnChange(ChangeEvent<int> evt)
+#endif
         {
             m_Node.owner.owner.RegisterCompleteObjectUndo("Integer Change");
-            m_PropertyInfo.SetValue(m_Node, (int)evt.newValue, null);
-            Dirty(ChangeType.Repaint);
+            var newValue =
+#if UNITY_2018_1
+                (int)
+#endif
+                evt.newValue;
+            m_PropertyInfo.SetValue(m_Node, newValue, null);
+            this.MarkDirtyRepaint();
         }
     }
 }
