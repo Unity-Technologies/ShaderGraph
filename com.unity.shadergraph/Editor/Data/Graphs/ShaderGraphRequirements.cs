@@ -54,7 +54,7 @@ namespace UnityEditor.ShaderGraph
             return newReqs;
         }
 
-        public static ShaderGraphRequirements FromNodes(List<INode> nodes)
+        public static ShaderGraphRequirements FromNodes(List<INode> nodes, bool HDRPBehavior = false)       // TODO: move LWRP hax out of this function
         {
             NeededCoordinateSpace requiresNormal = nodes.OfType<IMayRequireNormal>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresNormal());
             NeededCoordinateSpace requiresBitangent = nodes.OfType<IMayRequireBitangent>().Aggregate(NeededCoordinateSpace.None, (mask, node) => mask | node.RequiresBitangent());
@@ -79,7 +79,7 @@ namespace UnityEditor.ShaderGraph
                 | requiresNormal;
 
             var needsTangentSpace = (compoundSpaces & NeededCoordinateSpace.Tangent) > 0;
-            if (needsTangentSpace)
+            if (needsTangentSpace && !HDRPBehavior)
             {
                 requiresBitangent |= NeededCoordinateSpace.Object;
                 requiresNormal |= NeededCoordinateSpace.Object;

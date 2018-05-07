@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
@@ -681,7 +681,7 @@ namespace UnityEditor.ShaderGraph
                 surfaceDescriptionFunction,
                 functionRegistry,
                 shaderProperties,
-                requirements,
+                requirements,  // TODO: REMOVE UNUSED
                 mode,
                 outputIdProperty: results.outputIdProperty);
 
@@ -762,7 +762,7 @@ namespace UnityEditor.ShaderGraph
             ShaderGenerator surfaceDescriptionFunction,
             FunctionRegistry functionRegistry,
             PropertyCollector shaderProperties,
-            ShaderGraphRequirements requirements,
+            ShaderGraphRequirements requirements,  // TODO: REMOVE UNUSED
             GenerationMode mode,
             string functionName = "PopulateSurfaceData",
             string surfaceDescriptionName = "SurfaceDescription",

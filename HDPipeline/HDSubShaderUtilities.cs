@@ -7,8 +7,7 @@ using UnityEditor.ShaderGraph;
 
 namespace UnityEditor.ShaderGraph
 {
-    // TODO: rename this file to something along the lines of this class:
-    public class HDRPShaderStructs
+    public static class HDRPShaderStructs
     {
         struct AttributesMesh
         {
@@ -150,6 +149,7 @@ namespace UnityEditor.ShaderGraph
                 new Dependency("GraphInputs.ObjectSpacePosition",       "FragInputs.positionWS"),
                 new Dependency("GraphInputs.ViewSpacePosition",         "FragInputs.positionWS"),
 
+                new Dependency("GraphInputs.WorldSpaceViewDirection",   "FragInputs.positionWS"),                   // we build WorldSpaceViewDirection using FragInputs.positionWS in GetWorldSpaceNormalizeViewDir()
                 new Dependency("GraphInputs.ObjectSpaceViewDirection",  "GraphInputs.WorldSpaceViewDirection"),
                 new Dependency("GraphInputs.ViewSpaceViewDirection",    "GraphInputs.WorldSpaceViewDirection"),
                 new Dependency("GraphInputs.TangentSpaceViewDirection", "GraphInputs.WorldSpaceViewDirection"),
@@ -259,54 +259,11 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
-        static void AddActiveFieldsFromModelRequirements(HashSet<string> activeFields, ShaderGraphRequirements requirements)
-        {
-            if (requirements.requiresScreenPosition)
-            {
-                activeFields.Add("FragInputs.positionSS");
-            }
-
-            if (requirements.requiresVertexColor)
-            {
-                activeFields.Add("FragInputs.color");
-            }
-
-            if (requirements.requiresNormal != 0)
-            {
-                activeFields.Add("FragInputs.worldToTangent");                  // TODO: check actual space requirements:        space.ToVariableName(InterpolatorType.Normal)
-            }
-
-            if (requirements.requiresTangent != 0)
-            {
-                activeFields.Add("FragInputs.worldToTangent");                  // TODO: check actual space requirement
-            }
-
-            if (requirements.requiresBitangent != 0)
-            {
-                activeFields.Add("FragInputs.worldToTangent");                  // TODO: check actual space requirement
-            }
-
-//            if (requirements.requiresViewDir != 0)
-//            {
-//                activeFields.Add("FragInputs.???");        // TODO: check actual space requirement
-//            }
-
-            if (requirements.requiresPosition != 0)
-            {
-                activeFields.Add("FragInputs.positionWS");                     // TODO: check actual space requirement
-            }
-
-            foreach (var channel in requirements.requiresMeshUVs.Distinct())
-            {
-                activeFields.Add("FragInputs.texCoord" + (int)channel);
-            }
-        }
-
+        // TODO : split this function into buildActiveFields and buildHLSLTypeDeclaration functions
         public static void Generate(
-            ShaderGenerator definesResult,
             ShaderGenerator codeResult,
+            ShaderGenerator graphInputsResult,
             ShaderGraphRequirements graphRequirements,
-            ShaderGraphRequirements modelRequirements,
             List<string> passRequiredFields,            // fields the pass requires
             CoordinateSpace preferedCoordinateSpace,
             HashSet<string> activeFields)
@@ -315,9 +272,7 @@ namespace UnityEditor.ShaderGraph
                 preferedCoordinateSpace = CoordinateSpace.World;
 
             // build initial requirements
-//            var combinedRequirements = graphRequirements.Union(modelRequirements);
             AddActiveFieldsFromGraphRequirements(activeFields, graphRequirements);
-            AddActiveFieldsFromModelRequirements(activeFields, modelRequirements);
             if (passRequiredFields != null)
             {
                 foreach (var requiredField in passRequiredFields)
@@ -344,7 +299,145 @@ namespace UnityEditor.ShaderGraph
             ShaderSpliceUtil.BuildType(typeof(VaryingsMeshToDS), activeFields, codeResult);
             ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToPS), activeFields, codeResult);
             ShaderSpliceUtil.BuildPackedType(typeof(VaryingsMeshToDS), activeFields, codeResult);
-            ShaderSpliceUtil.BuildType(typeof(GraphInputs), activeFields, codeResult);
+            ShaderSpliceUtil.BuildType(typeof(GraphInputs), activeFields, graphInputsResult);
         }
     };
+
+    public struct Pass
+    {
+        public string Name;
+        public string LightMode;
+        public string ShaderPassName;
+        public List<string> Includes;
+        public string TemplateName;
+        public List<string> ExtraDefines;
+        public List<int> VertexShaderSlots;         // These control what slots are used by the pass vertex shader
+        public List<int> PixelShaderSlots;          // These control what slots are used by the pass pixel shader
+        public string CullOverride;
+        public string BlendOverride;
+        public string BlendOpOverride;
+        public string ZTestOverride;
+        public string ZWriteOverride;
+        public string ColorMaskOverride;
+        public List<string> StencilOverride;
+        public List<string> RequiredFields;         // feeds into the dependency analysis
+        public ShaderGraphRequirements requirements;
+    };
+
+    public static class HDSubShaderUtilities
+    {
+        public static void BuildRenderStatesFromPassAndMaterialOptions(
+            Pass pass,
+            SurfaceMaterialOptions materialOptions,
+            ShaderGenerator blendCode,
+            ShaderGenerator cullCode,
+            ShaderGenerator zTestCode,
+            ShaderGenerator zWriteCode,
+            ShaderGenerator stencilCode,
+            ShaderGenerator colorMaskCode)
+        {
+            if (pass.BlendOverride != null)
+            {
+                blendCode.AddShaderChunk(pass.BlendOverride);
+            }
+            else
+            {
+                materialOptions.GetBlend(blendCode);
+            }
+
+            if (pass.BlendOpOverride != null)
+            {
+                blendCode.AddShaderChunk(pass.BlendOpOverride);
+            }
+
+            if (pass.CullOverride != null)
+            {
+                cullCode.AddShaderChunk(pass.CullOverride);
+            }
+            else
+            {
+                materialOptions.GetCull(cullCode);
+            }
+
+            if (pass.ZTestOverride != null)
+            {
+                zTestCode.AddShaderChunk(pass.ZTestOverride);
+            }
+            else
+            {
+                materialOptions.GetDepthTest(zTestCode);
+            }
+
+            if (pass.ZWriteOverride != null)
+            {
+                zWriteCode.AddShaderChunk(pass.ZWriteOverride);
+            }
+            else
+            {
+                materialOptions.GetDepthWrite(zWriteCode);
+            }
+
+            if (pass.ColorMaskOverride != null)
+            {
+                colorMaskCode.AddShaderChunk(pass.ColorMaskOverride);
+            }
+            else
+            {
+                // material option default is to not declare anything for color mask
+            }
+
+            if (pass.StencilOverride != null)
+            {
+                foreach (var str in pass.StencilOverride)
+                {
+                    stencilCode.AddShaderChunk(str);
+                }
+            }
+            else
+            {
+                stencilCode.AddShaderChunk("// Default Stencil");
+            }
+        }
+
+        public static SurfaceMaterialOptions BuildMaterialOptions(SurfaceType surfaceType, AlphaMode alphaMode, bool twoSided)
+        {
+            SurfaceMaterialOptions materialOptions = new SurfaceMaterialOptions();
+            if (surfaceType == SurfaceType.Opaque)
+            {
+                materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
+                materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
+                materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
+                materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
+            }
+            else
+            {
+                switch (alphaMode)
+                {
+                    case AlphaMode.Alpha:
+                        materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
+                        materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
+                        materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                        materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                        materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                        materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                        break;
+                    case AlphaMode.Additive:
+                        materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
+                        materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
+                        materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
+                        materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
+                        materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
+                        materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
+                        break;
+                        // TODO: other blend modes
+                }
+            }
+
+            materialOptions.cullMode = twoSided ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+
+            return materialOptions;
+        }
+    }
 }

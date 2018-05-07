@@ -4,33 +4,39 @@ using System.IO;
 using System.Linq;
 using UnityEditor.Graphing;
 
+
 namespace UnityEditor.ShaderGraph
 {
 //    [Serializable] ??
     public class HDUnlitSubShader : IUnlitSubShader
     {
-        struct Pass
+        Pass m_PassDepthOnly = new Pass()
         {
-            public string Name;
-            public string LightMode;
-            public string ShaderPassName;
-            public List<string> Includes;
-            public string TemplateName;
-            public List<string> ExtraDefines;
-            public List<int> VertexShaderSlots;         // These control what slots are used by the pass vertex shader
-            public List<int> PixelShaderSlots;          // These control what slots are used by the pass pixel shader
-            public List<string> RequiredFields;         // feeds into the dependency analysis
-        }
+            Name = "Depth prepass",
+            LightMode = "DepthForwardOnly",
+            TemplateName = "HDUnlitPassForward.template",
+            ShaderPassName = "SHADERPASS_DEPTH_ONLY",
+            ZWriteOverride = "ZWrite On",
+            Includes = new List<string>()
+            {
+                "#include \"HDRP/ShaderPass/ShaderPassDepthOnly.hlsl\"",
+            },
+            PixelShaderSlots = new List<int>()
+            {
+                UnlitMasterNode.AlphaSlotId,
+                UnlitMasterNode.AlphaThresholdSlotId
+            }
+        };
 
-        Pass m_UnlitPassForwardOnly = new Pass()
+        Pass m_PassForward = new Pass()
         {
-            Name = "ForwardOnly",
+            Name = "Forward Unlit",
             LightMode = "ForwardOnly",
             TemplateName = "HDUnlitPassForward.template",
             ShaderPassName = "SHADERPASS_FORWARD_UNLIT",
             ExtraDefines = new List<string>()
             {
-                "#pragma multi_compile _ DEBUG_DISPLAY",	// TODO: can we drop this now?
+                "#pragma multi_compile _ DEBUG_DISPLAY"
             },
             Includes = new List<string>()
             {
@@ -44,20 +50,52 @@ namespace UnityEditor.ShaderGraph
             }
         };
 
-        Pass m_UnlitPassForwardDepthOnly = new Pass()
+        Pass m_PassMETA = new Pass()
         {
-            Name = "DepthForwardOnly",
-            LightMode = "DepthForwardOnly",
+            Name = "META",
+            LightMode = "Meta",
             TemplateName = "HDUnlitPassForward.template",
-            ShaderPassName = "SHADERPASS_DEPTH_ONLY",
+            ShaderPassName = "SHADERPASS_LIGHT_TRANSPORT",
+            CullOverride = "Cull Off",
             Includes = new List<string>()
             {
-                "#include \"HDRP/ShaderPass/ShaderPassDepthOnly.hlsl\"",
+                "#include \"HDRP/ShaderPass/ShaderPassLightTransport.hlsl\"",
+            },
+            RequiredFields = new List<string>()
+            {
+                "AttributesMesh.normalOS",
+                "AttributesMesh.tangentOS",     // Always present as we require it also in case of anisotropic lighting
+                "AttributesMesh.uv0",
+                "AttributesMesh.uv1",
+                "AttributesMesh.color",
+                "AttributesMesh.uv2",           // SHADERPASS_LIGHT_TRANSPORT always uses uv2
             },
             PixelShaderSlots = new List<int>()
             {
+                UnlitMasterNode.ColorSlotId,
                 UnlitMasterNode.AlphaSlotId,
                 UnlitMasterNode.AlphaThresholdSlotId
+            }
+        };
+
+        Pass m_PassDistortion = new Pass()
+        {
+            Name = "Distortion",
+            LightMode = "DistortionVectors",
+            TemplateName = "HDUnlitPassForward.template",
+            ShaderPassName = "SHADERPASS_DISTORTION",
+            BlendOverride = "Blend One One, One One",   // [_DistortionSrcBlend] [_DistortionDstBlend], [_DistortionBlurSrcBlend] [_DistortionBlurDstBlend]
+            BlendOpOverride = "BlendOp Add, Add",       // Add, [_DistortionBlurBlendOp]
+            ZTestOverride = "ZTest LEqual",             // [_ZTestModeDistortion]
+            ZWriteOverride = "ZWrite Off",
+            Includes = new List<string>()
+            {
+                "#include \"HDRP/ShaderPass/ShaderPassDistortion.hlsl\"",
+            },
+            PixelShaderSlots = new List<int>()
+            {
+                PBRMasterNode.AlphaSlotId,
+                PBRMasterNode.AlphaThresholdSlotId
             }
         };
 
@@ -181,124 +219,64 @@ namespace UnityEditor.ShaderGraph
                 return false;
             }
 
-            var nodeFunctions = new ShaderStringBuilder();
-            nodeFunctions.IncreaseIndent();
-            nodeFunctions.IncreaseIndent();
-
-            var vertexInputs = new ShaderGenerator();
-            var graphEvalFunction = new ShaderGenerator();
-            var graphOutputs = new ShaderGenerator();
-            var functionRegistry = new FunctionRegistry(nodeFunctions);
-            var graphInputs = new ShaderGenerator();
-
-            var shaderProperties = new PropertyCollector();
-
-            graphInputs.AddShaderChunk("struct OLDSurfaceInputs {", false);
-            graphInputs.Indent();
-
+            // grab all of the active nodes
             var activeNodeList = ListPool<INode>.Get();
             NodeUtils.DepthFirstCollectNodesFromNode(activeNodeList, masterNode, NodeUtils.IncludeSelf.Include, pass.PixelShaderSlots);
 
-            var graphRequirements = ShaderGraphRequirements.FromNodes(activeNodeList);
+            // graph requirements describe what the graph itself requires
+            var graphRequirements = ShaderGraphRequirements.FromNodes(activeNodeList, true);
 
-            // TODO: make this default list of requirements be per-pass defined?
-            var modelRequirements = ShaderGraphRequirements.none;
-            modelRequirements.requiresNormal |= NeededCoordinateSpace.World;
-            modelRequirements.requiresTangent |= NeededCoordinateSpace.World;
-            modelRequirements.requiresBitangent |= NeededCoordinateSpace.World;
-            modelRequirements.requiresPosition |= NeededCoordinateSpace.World;
-            modelRequirements.requiresViewDir |= NeededCoordinateSpace.World;
+            ShaderStringBuilder graphNodeFunctions = new ShaderStringBuilder();
+            graphNodeFunctions.IncreaseIndent();
+            var functionRegistry = new FunctionRegistry(graphNodeFunctions);
 
-            // TODO: need to be able to handle these transformations in the dependency code...
-            GraphUtil.GenerateApplicationVertexInputs(graphRequirements.Union(modelRequirements), vertexInputs);
-            ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(graphRequirements.requiresNormal, InterpolatorType.Normal, graphInputs);
-            ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(graphRequirements.requiresTangent, InterpolatorType.Tangent, graphInputs);
-            ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(graphRequirements.requiresBitangent, InterpolatorType.BiTangent, graphInputs);
-            ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(graphRequirements.requiresViewDir, InterpolatorType.ViewDirection, graphInputs);
-            ShaderGenerator.GenerateSpaceTranslationSurfaceInputs(graphRequirements.requiresPosition, InterpolatorType.Position, graphInputs);
-
-//            ShaderGenerator defines = new ShaderGenerator();
-//            defines.AddShaderChunk(string.Format("#define SHADERPASS {0}", pass.ShaderPassName), true);
-
-            if (graphRequirements.requiresVertexColor)
-                graphInputs.AddShaderChunk(string.Format("float4 {0};", ShaderGeneratorNames.VertexColor), false);
-
-            if (graphRequirements.requiresScreenPosition)
-                graphInputs.AddShaderChunk(string.Format("float4 {0};", ShaderGeneratorNames.ScreenPosition), false);
-
-            foreach (var channel in graphRequirements.requiresMeshUVs.Distinct())
-            {
-                graphInputs.AddShaderChunk(string.Format("half4 {0};", channel.GetUVName()), false);
-//                defines.AddShaderChunk(string.Format("#define ATTRIBUTES_NEED_TEXCOORD{0}", (int)channel), true);
-//                defines.AddShaderChunk(string.Format("#define VARYINGS_NEED_TEXCOORD{0}", (int)channel), true);
-            }
-
-            graphInputs.Deindent();
-            graphInputs.AddShaderChunk("};", false);
-
-            var slots = new List<MaterialSlot>();
-            var usedSlots = new List<MaterialSlot>();           // TODO can we use the same list of slots?
+            // Build the list of active slots based on what the pass requires
+            // TODO: this can be a shared function -- From here through GraphUtil.GenerateSurfaceDescription(..)
+            var activeSlots = new List<MaterialSlot>();
             foreach (var id in pass.PixelShaderSlots)
             {
                 MaterialSlot slot = masterNode.FindSlot<MaterialSlot>(id);
                 if (slot != null)
                 {
-                    slots.Add(slot);
-                    usedSlots.Add(slot);
+                    activeSlots.Add(slot);
                 }
             }
 
-            HashSet<string> activeFields = new HashSet<string>();
-            GraphUtil.GenerateSurfaceDescriptionStruct(graphOutputs, slots, true, "GraphOutputs", activeFields);
+            // build the graph outputs structure to hold the results of each active slots (and fill out activeFields to indicate they are active)
+            string graphInputStructName = "GraphInputs";
+            string graphOutputStructName = "GraphOutputs";
+            string graphEvalFunctionName = "EvaluateGraph";
+            ShaderGenerator graphEvalFunction = new ShaderGenerator();
+            ShaderGenerator graphOutputs = new ShaderGenerator();
+            PropertyCollector graphProperties = new PropertyCollector();
 
+            // build the graph outputs structure, and populate activeFields with the fields of that structure
+            HashSet<string> activeFields = new HashSet<string>();
+            GraphUtil.GenerateSurfaceDescriptionStruct(graphOutputs, activeSlots, true, graphOutputStructName, activeFields);
+
+            // Build the graph evaluation code, to evaluate the specified slots
             GraphUtil.GenerateSurfaceDescription(
                 activeNodeList,
                 masterNode,
                 masterNode.owner as AbstractMaterialGraph,
                 graphEvalFunction,
                 functionRegistry,
-                shaderProperties,
-                graphRequirements,
+                graphProperties,
+                graphRequirements,  // TODO : REMOVE UNUSED
                 mode,
-                "EvaluateGraph",
-                "GraphOutputs",
+                graphEvalFunctionName,
+                graphOutputStructName,
                 null,
-                usedSlots,
-                "GraphInputs");
+                activeSlots,
+                graphInputStructName);
 
-            var graph = new ShaderGenerator();
-            graph.AddShaderChunk("// Node function definitions", false);
-            graph.AddShaderChunk(nodeFunctions.ToString(), false);
-
-            graph.AddShaderChunk("// Graph Inputs", false);
-            graph.AddGenerator(graphInputs);
-            graph.AddShaderChunk("// Graph Outputs", false);
-            graph.AddGenerator(graphOutputs);
-            graph.AddShaderChunk("// ShaderGraph Properties", false);
-            graph.AddShaderChunk(shaderProperties.GetPropertiesDeclaration(2), false);
-
-            graph.AddShaderChunk("// Graph evaluation", false);
-            graph.AddGenerator(graphEvalFunction);
-
-//            var tagsVisitor = new ShaderGenerator();
-            var blendingVisitor = new ShaderGenerator();
-            var cullingVisitor = new ShaderGenerator();
-            var zTestVisitor = new ShaderGenerator();
-            var zWriteVisitor = new ShaderGenerator();
-
-//            var materialOptions = new SurfaceMaterialOptions();
-  //          materialOptions.GetTags(tagsVisitor);
-            materialOptions.GetBlend(blendingVisitor);
-            materialOptions.GetCull(cullingVisitor);
-            materialOptions.GetDepthTest(zTestVisitor);
-            materialOptions.GetDepthWrite(zWriteVisitor);
-
-            var localPixelShader = new ShaderGenerator();
-            var localSurfaceInputs = new ShaderGenerator();
-            var surfaceOutputRemap = new ShaderGenerator();
-            var packedInterpolatorCode = new ShaderGenerator();
-            var interpolatorDefines = new ShaderGenerator();
-
+            var blendCode = new ShaderGenerator();
+            var cullCode = new ShaderGenerator();
+            var zTestCode = new ShaderGenerator();
+            var zWriteCode = new ShaderGenerator();
+            var stencilCode = new ShaderGenerator();
+            var colorMaskCode = new ShaderGenerator();
+            HDSubShaderUtilities.BuildRenderStatesFromPassAndMaterialOptions(pass, materialOptions, blendCode, cullCode, zTestCode, zWriteCode, stencilCode, colorMaskCode);
 
             if (masterNode.twoSided.isOn)
             {
@@ -311,21 +289,23 @@ namespace UnityEditor.ShaderGraph
                 }
             }
 
+            var packedInterpolatorCode = new ShaderGenerator();
+            var graphInputs = new ShaderGenerator();
             HDRPShaderStructs.Generate(
-                interpolatorDefines,
                 packedInterpolatorCode,
+                graphInputs,
                 graphRequirements,
-                modelRequirements,
                 pass.RequiredFields,
                 CoordinateSpace.World,
                 activeFields);
 
             // debug output all active fields
+            var interpolatorDefines = new ShaderGenerator();
             {
-                interpolatorDefines.AddShaderChunk("// ACTIVE FIELDS:", false);
+                interpolatorDefines.AddShaderChunk("// ACTIVE FIELDS:");
                 foreach (string f in activeFields)
                 {
-                    interpolatorDefines.AddShaderChunk("// " + f, false);
+                    interpolatorDefines.AddShaderChunk("//   " + f);
                 }
             }
 
@@ -335,55 +315,56 @@ namespace UnityEditor.ShaderGraph
                 if (pass.ExtraDefines != null)
                 {
                     foreach (var define in pass.ExtraDefines)
-                    {
-                        defines.AddShaderChunk(define, true);
-                    }
+                        defines.AddShaderChunk(define);
                 }
-            }
-
-            foreach (var slot in usedSlots)
-            {
-                surfaceOutputRemap.AddShaderChunk(string.Format("{0} = surf.{0};", slot.shaderOutputName), true);
+                defines.AddGenerator(interpolatorDefines);
             }
 
             var shaderPassIncludes = new ShaderGenerator();
             if (pass.Includes != null)
             {
                 foreach (var include in pass.Includes)
-                {
-                    shaderPassIncludes.AddShaderChunk(include, true);
-                }
+                    shaderPassIncludes.AddShaderChunk(include);
             }
 
-            string definesString = defines.GetShaderString(2);
-            definesString = definesString + "\n\n\t\t// Interpolator defines\n";
-            definesString = definesString + interpolatorDefines.GetShaderString(2);
 
-            // build the hash table of all named fragments
+            // build graph code
+            var graph = new ShaderGenerator();
+            graph.AddShaderChunk("// Graph Inputs");
+                graph.Indent();
+                graph.AddGenerator(graphInputs);
+                graph.Deindent();
+            graph.AddShaderChunk("// Graph Outputs");
+                graph.Indent();
+                graph.AddGenerator(graphOutputs);
+                graph.Deindent();
+            graph.AddShaderChunk("// Graph Properties (uniform inputs)");
+                graph.AddShaderChunk(graphProperties.GetPropertiesDeclaration(1));
+            graph.AddShaderChunk("// Graph Node Functions");
+                graph.AddShaderChunk(graphNodeFunctions.ToString());
+            graph.AddShaderChunk("// Graph Evaluation");
+                graph.Indent();
+                graph.AddGenerator(graphEvalFunction);
+                graph.Deindent();
+
+            // build the hash table of all named fragments		TODO: could make this Dictionary<string, ShaderGenerator / string>  ?
             Dictionary<string, string> namedFragments = new Dictionary<string, string>();
-            namedFragments.Add("${Defines}",                definesString);
-
-            namedFragments.Add("${Graph}",                  graph.GetShaderString(3));
-//             namedFragments.Add("${Interpolators}", interpolators.GetShaderString(3));
-//             namedFragments.Add("${VertexShader}", localVertexShader.GetShaderString(3));
-            namedFragments.Add("${LocalPixelShader}",       localPixelShader.GetShaderString(3));
-            namedFragments.Add("${SurfaceInputs}",          localSurfaceInputs.GetShaderString(3));
-            namedFragments.Add("${SurfaceOutputRemap}",     surfaceOutputRemap.GetShaderString(3));
+            namedFragments.Add("${Defines}",                defines.GetShaderString(2, false));
+            namedFragments.Add("${Graph}",                  graph.GetShaderString(2, false));
             namedFragments.Add("${LightMode}",              pass.LightMode);
             namedFragments.Add("${PassName}",               pass.Name);
-            namedFragments.Add("${Includes}",               shaderPassIncludes.GetShaderString(2));
-            namedFragments.Add("${InterpolatorPacking}",    packedInterpolatorCode.GetShaderString(2));
-            namedFragments.Add("${Blending}",               blendingVisitor.GetShaderString(2));
-            namedFragments.Add("${Culling}",                cullingVisitor.GetShaderString(2));
-            namedFragments.Add("${ZTest}",                  zTestVisitor.GetShaderString(2));
-            namedFragments.Add("${ZWrite}",                 zWriteVisitor.GetShaderString(2));
-//             namedFragments.Add("${Stencil}", stencilVisitor.GetShaderString(2));
+            namedFragments.Add("${Includes}",               shaderPassIncludes.GetShaderString(2, false));
+            namedFragments.Add("${InterpolatorPacking}",    packedInterpolatorCode.GetShaderString(2, false));
+            namedFragments.Add("${Blending}",               blendCode.GetShaderString(2, false));
+            namedFragments.Add("${Culling}",                cullCode.GetShaderString(2, false));
+            namedFragments.Add("${ZTest}",                  zTestCode.GetShaderString(2, false));
+            namedFragments.Add("${ZWrite}",                 zWriteCode.GetShaderString(2, false));
+            namedFragments.Add("${Stencil}",                stencilCode.GetShaderString(2, false));
+            namedFragments.Add("${ColorMask}",              colorMaskCode.GetShaderString(2, false));
             namedFragments.Add("${LOD}",                    materialOptions.lod.ToString());
             namedFragments.Add("${VariantDefines}",         GetVariantDefines(masterNode));
 
-//            namedFragments.Add("${Tags}", tagsVisitor.GetShaderString(2));
-
-            // process the template to generate the shader code for this pass
+            // process the template to generate the shader code for this pass	TODO: could make this a shared function
             string[] templateLines = File.ReadAllLines(templateLocation);
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
             foreach (string line in templateLines)
@@ -405,47 +386,11 @@ namespace UnityEditor.ShaderGraph
             subShader.AddShaderChunk("{", true);
             subShader.Indent();
             {
-                var materialOptions = new SurfaceMaterialOptions();
-                if (masterNode.surfaceType == SurfaceType.Opaque)
-                {
-                    materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
-                    materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.Zero;
-                    materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
-                    materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.On;
-                    materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Geometry;
-                    materialOptions.renderType = SurfaceMaterialOptions.RenderType.Opaque;
-                }
-                else
-                {
-                    switch (masterNode.alphaMode)
-                    {
-                        case AlphaMode.Alpha:
-                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.SrcAlpha;
-                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.OneMinusSrcAlpha;
-                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
-                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
-                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
-                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
-                            break;
-                        case AlphaMode.Additive:
-                            materialOptions.srcBlend = SurfaceMaterialOptions.BlendMode.One;
-                            materialOptions.dstBlend = SurfaceMaterialOptions.BlendMode.One;
-                            materialOptions.zTest = SurfaceMaterialOptions.ZTest.LEqual;
-                            materialOptions.zWrite = SurfaceMaterialOptions.ZWrite.Off;
-                            materialOptions.renderQueue = SurfaceMaterialOptions.RenderQueue.Transparent;
-                            materialOptions.renderType = SurfaceMaterialOptions.RenderType.Transparent;
-                            break;
-                        // TODO: other blend modes
-                    }
-                }
-
-                materialOptions.cullMode = masterNode.twoSided.isOn ? SurfaceMaterialOptions.CullMode.Off : SurfaceMaterialOptions.CullMode.Back;
+                SurfaceMaterialOptions materialOptions = HDSubShaderUtilities.BuildMaterialOptions(masterNode.surfaceType, masterNode.alphaMode, masterNode.twoSided.isOn);
 
                 // Add tags at the SubShader level
                 {
                     var tagsVisitor = new ShaderGenerator();
-                    //                    tagsVisitor.AddShaderChunk("Tags{ \"RenderPipeline\" = \"HDRP\"}", true);
-                    //  subShader.AddShaderChunk("Tags{ \"RenderType\" = \"Opaque\" }", true);
                     materialOptions.GetTags(tagsVisitor);
                     subShader.AddShaderChunk(tagsVisitor.GetShaderString(0), false);
                 }
@@ -453,10 +398,15 @@ namespace UnityEditor.ShaderGraph
                 // generate the necessary shader passes
 //                bool opaque = (masterNode.surfaceType == SurfaceType.Opaque);
 //                bool transparent = (masterNode.surfaceType != SurfaceType.Opaque);
+                bool distortionActive = false;
 
-                GenerateShaderPass(masterNode, m_UnlitPassForwardDepthOnly, mode, materialOptions, subShader);
-                GenerateShaderPass(masterNode, m_UnlitPassForwardOnly, mode, materialOptions, subShader);
-
+                GenerateShaderPass(masterNode, m_PassDepthOnly, mode, materialOptions, subShader);
+                GenerateShaderPass(masterNode, m_PassForward, mode, materialOptions, subShader);
+                GenerateShaderPass(masterNode, m_PassMETA, mode, materialOptions, subShader);
+                if (distortionActive)
+                {
+                    GenerateShaderPass(masterNode, m_PassDistortion, mode, materialOptions, subShader);
+                }
             }
             subShader.Deindent();
             subShader.AddShaderChunk("}", true);

@@ -12,6 +12,7 @@ ${Culling}
 ${ZTest}
 ${ZWrite}
 ${Stencil}
+${ColorMask}
     //-------------------------------------------------------------------------------------
     // End Render Modes
     //-------------------------------------------------------------------------------------
@@ -19,11 +20,11 @@ ${Stencil}
     HLSLPROGRAM
     
     #pragma target 4.5
-    #pragma only_renderers d3d11 ps4 xboxone vulkan metal
+    #pragma only_renderers d3d11 ps4 xboxone vulkan metal switch
     //#pragma enable_d3d11_debug_symbols
 
     //-------------------------------------------------------------------------------------
-    // Variant
+    // Variant Definitions
     //-------------------------------------------------------------------------------------
 ${VariantDefines}
     //-------------------------------------------------------------------------------------
@@ -39,7 +40,8 @@ ${VariantDefines}
     // this modifies the normal calculation
     // #define SURFACE_GRADIENT
 
-    // This shader support vertex modification (or not) TODO - move to PBR shader control
+    // This shader support vertex modification (or not)
+    // TODO - move to PBR shader control
     // #define HAVE_VERTEX_MODIFICATION
 
     // If we use subsurface scattering, enable output split lighting (for forward pass)
@@ -56,7 +58,6 @@ ${VariantDefines}
 
     // define FragInputs structure
     #include "HDRP/ShaderPass/FragInputs.hlsl"
-
     #include "HDRP/ShaderPass/ShaderPass.cs.hlsl"
 
     //-------------------------------------------------------------------------------------
@@ -64,23 +65,22 @@ ${VariantDefines}
     //-------------------------------------------------------------------------------------
 ${Defines}
 
-    // this translates the new dependency tracker into the old preprocessor definitions for the existing HDRP shader code
-    $AttributesMesh.normalOS:               #define ATTRIBUTES_NEED_NORMAL
-    $AttributesMesh.tangentOS:              #define ATTRIBUTES_NEED_TANGENT
-    $AttributesMesh.uv0:                    #define ATTRIBUTES_NEED_TEXCOORD0
-    $AttributesMesh.uv1:                    #define ATTRIBUTES_NEED_TEXCOORD1
-    $AttributesMesh.uv2:                    #define ATTRIBUTES_NEED_TEXCOORD2
-    $AttributesMesh.uv3:                    #define ATTRIBUTES_NEED_TEXCOORD3
-    $AttributesMesh.color:                  #define ATTRIBUTES_NEED_COLOR
-    $VaryingsMeshToPS.positionWS:           #define VARYINGS_NEED_POSITION_WS
-    $VaryingsMeshToPS.normalWS:             #define VARYINGS_NEED_TANGENT_TO_WORLD
-    $VaryingsMeshToPS.texCoord0:            #define VARYINGS_NEED_TEXCOORD0
-    $VaryingsMeshToPS.texCoord1:            #define VARYINGS_NEED_TEXCOORD1
-    $VaryingsMeshToPS.texCoord2:            #define VARYINGS_NEED_TEXCOORD2
-    $VaryingsMeshToPS.texCoord3:            #define VARYINGS_NEED_TEXCOORD3
-    $VaryingsMeshToPS.color:                #define VARYINGS_NEED_COLOR
-    $VaryingsMeshToPS.cullFace:             #define VARYINGS_NEED_CULLFACE
-
+        // this translates the new dependency tracker into the old preprocessor definitions for the existing HDRP shader code
+        $AttributesMesh.normalOS:               #define ATTRIBUTES_NEED_NORMAL
+        $AttributesMesh.tangentOS:              #define ATTRIBUTES_NEED_TANGENT
+        $AttributesMesh.uv0:                    #define ATTRIBUTES_NEED_TEXCOORD0
+        $AttributesMesh.uv1:                    #define ATTRIBUTES_NEED_TEXCOORD1
+        $AttributesMesh.uv2:                    #define ATTRIBUTES_NEED_TEXCOORD2
+        $AttributesMesh.uv3:                    #define ATTRIBUTES_NEED_TEXCOORD3
+        $AttributesMesh.color:                  #define ATTRIBUTES_NEED_COLOR
+        $VaryingsMeshToPS.positionWS:           #define VARYINGS_NEED_POSITION_WS
+        $VaryingsMeshToPS.normalWS:             #define VARYINGS_NEED_TANGENT_TO_WORLD
+        $VaryingsMeshToPS.texCoord0:            #define VARYINGS_NEED_TEXCOORD0
+        $VaryingsMeshToPS.texCoord1:            #define VARYINGS_NEED_TEXCOORD1
+        $VaryingsMeshToPS.texCoord2:            #define VARYINGS_NEED_TEXCOORD2
+        $VaryingsMeshToPS.texCoord3:            #define VARYINGS_NEED_TEXCOORD3
+        $VaryingsMeshToPS.color:                #define VARYINGS_NEED_COLOR
+        $VaryingsMeshToPS.cullFace:             #define VARYINGS_NEED_CULLFACE
     //-------------------------------------------------------------------------------------
     // End Defines
     //-------------------------------------------------------------------------------------
@@ -100,6 +100,7 @@ ${Defines}
     #include "HDRP/Material/MaterialUtilities.hlsl"
 
     // this function assumes the bitangent flip is encoded in tangentWS.w
+    // TODO: move this function to HDRP shared file, once we merge with HDRP repo
     float3x3 BuildWorldToTangent(float4 tangentWS, float3 normalWS)
     {
         // tangentWS must not be normalized (mikkts requirement)
@@ -121,13 +122,22 @@ ${Defines}
     }
 
     //-------------------------------------------------------------------------------------
-    // Interpolator Packing And Other Fun Stuff
+    // Interpolator Packing And Struct Declarations
     //-------------------------------------------------------------------------------------
 ${InterpolatorPacking}
     //-------------------------------------------------------------------------------------
-    // End Interpolator Packing And Other Fun Stuff
+    // End Interpolator Packing And Struct Declarations
     //-------------------------------------------------------------------------------------
 
+    //-------------------------------------------------------------------------------------
+    // Graph generated code
+    //-------------------------------------------------------------------------------------
+${Graph}
+    //-------------------------------------------------------------------------------------
+    // End graph generated code
+    //-------------------------------------------------------------------------------------
+
+	// TODO: Do we want to build include functionality for sharing these preprocessed functions across templates?
         FragInputs BuildFragInputs(VaryingsMeshToPS input)
         {
             FragInputs output;
@@ -162,25 +172,25 @@ ${InterpolatorPacking}
             ZERO_INITIALIZE(GraphInputs, output);
 
             $GraphInputs.WorldSpaceNormal:          output.WorldSpaceNormal =            normalize(input.worldToTangent[2].xyz);
-			$GraphInputs.ObjectSpaceNormal:         output.ObjectSpaceNormal =           mul(output.WorldSpaceNormal, (float3x3) unity_ObjectToWorld);      // transposed multiplication by inverse matrix to handle normal scale
-			$GraphInputs.ViewSpaceNormal:           output.ViewSpaceNormal =             mul(output.WorldSpaceNormal, (float3x3) UNITY_MATRIX_I_V);         // transposed multiplication by inverse matrix to handle normal scale
-			$GraphInputs.TangentSpaceNormal:        output.TangentSpaceNormal =          float3(0.0f, 0.0f, 1.0f);
+            $GraphInputs.ObjectSpaceNormal:         output.ObjectSpaceNormal =           mul(output.WorldSpaceNormal, (float3x3) unity_ObjectToWorld);      // transposed multiplication by inverse matrix to handle normal scale
+            $GraphInputs.ViewSpaceNormal:           output.ViewSpaceNormal =             mul(output.WorldSpaceNormal, (float3x3) UNITY_MATRIX_I_V);         // transposed multiplication by inverse matrix to handle normal scale
+            $GraphInputs.TangentSpaceNormal:        output.TangentSpaceNormal =          float3(0.0f, 0.0f, 1.0f);
 
             $GraphInputs.WorldSpaceTangent:		    output.WorldSpaceTangent =           input.worldToTangent[0].xyz;
-			$GraphInputs.ObjectSpaceTangent:        output.ObjectSpaceTangent =          mul((float3x3) unity_WorldToObject, output.WorldSpaceTangent);
-			$GraphInputs.ViewSpaceTangent:          output.ViewSpaceTangent =            mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceTangent);
-			$GraphInputs.TangentSpaceTangent:       output.TangentSpaceTangent =         float3(1.0f, 0.0f, 0.0f);
+            $GraphInputs.ObjectSpaceTangent:        output.ObjectSpaceTangent =          mul((float3x3) unity_WorldToObject, output.WorldSpaceTangent);
+            $GraphInputs.ViewSpaceTangent:          output.ViewSpaceTangent =            mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceTangent);
+            $GraphInputs.TangentSpaceTangent:       output.TangentSpaceTangent =         float3(1.0f, 0.0f, 0.0f);
 
             $GraphInputs.WorldSpaceBiTangent:       output.WorldSpaceBiTangent =         input.worldToTangent[1].xyz;
-			$GraphInputs.ObjectSpaceBiTangent:      output.ObjectSpaceBiTangent =        mul((float3x3) unity_WorldToObject, output.WorldSpaceBiTangent);
-			$GraphInputs.ViewSpaceBiTangent:        output.ViewSpaceBiTangent =          mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceBiTangent);
-			$GraphInputs.TangentSpaceBiTangent:     output.TangentSpaceBiTangent =       float3(0.0f, 1.0f, 0.0f);
+            $GraphInputs.ObjectSpaceBiTangent:      output.ObjectSpaceBiTangent =        mul((float3x3) unity_WorldToObject, output.WorldSpaceBiTangent);
+            $GraphInputs.ViewSpaceBiTangent:        output.ViewSpaceBiTangent =          mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceBiTangent);
+            $GraphInputs.TangentSpaceBiTangent:     output.TangentSpaceBiTangent =       float3(0.0f, 1.0f, 0.0f);
 
             $GraphInputs.WorldSpaceViewDirection:   output.WorldSpaceViewDirection =     normalize(viewWS);
-			$GraphInputs.ObjectSpaceViewDirection:  output.ObjectSpaceViewDirection =    mul((float3x3) unity_WorldToObject, output.WorldSpaceViewDirection);
-			$GraphInputs.ViewSpaceViewDirection:    output.ViewSpaceViewDirection =      mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceViewDirection);
+            $GraphInputs.ObjectSpaceViewDirection:  output.ObjectSpaceViewDirection =    mul((float3x3) unity_WorldToObject, output.WorldSpaceViewDirection);
+            $GraphInputs.ViewSpaceViewDirection:    output.ViewSpaceViewDirection =      mul((float3x3) UNITY_MATRIX_V, output.WorldSpaceViewDirection);
             $GraphInputs.TangentSpaceViewDirection: float3x3 tangentSpaceTransform =     float3x3(output.WorldSpaceTangent,output.WorldSpaceBiTangent,output.WorldSpaceNormal);
-			$GraphInputs.TangentSpaceViewDirection: output.TangentSpaceViewDirection =   mul(tangentSpaceTransform, output.WorldSpaceViewDirection);
+            $GraphInputs.TangentSpaceViewDirection: output.TangentSpaceViewDirection =   mul(tangentSpaceTransform, output.WorldSpaceViewDirection);
 
             // TODO: FragInputs.positionWS is badly named -- it's camera relative, not in world space
             $GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS + _WorldSpaceCameraPos;
@@ -208,14 +218,6 @@ ${InterpolatorPacking}
         return BuildFragInputs(unpacked);
     }
 
-    //-------------------------------------------------------------------------------------
-    // Graph generated code
-    //-------------------------------------------------------------------------------------
-${Graph}
-    //-------------------------------------------------------------------------------------
-    // End graph generated code
-    //-------------------------------------------------------------------------------------
-
     void BuildSurfaceData(FragInputs fragInputs, GraphOutputs graphOutputs, float3 V, out SurfaceData surfaceData)
     {
         // setup defaults -- these are used if the graph doesn't output a value
@@ -224,13 +226,13 @@ ${Graph}
         surfaceData.subsurfaceMask =        1.0f;
 
         // copy across graph values, if defined
-        $GraphOutputs.Albedo:               surfaceData.baseColor =				graphOutputs.Albedo;
+        $GraphOutputs.Albedo:               surfaceData.baseColor =             graphOutputs.Albedo;
         $GraphOutputs.Smoothness:           surfaceData.perceptualSmoothness =  graphOutputs.Smoothness;
-//		                                    surfaceData.ambientOcclusion =      graphOutputs.AmbientOcclusion;
-		$GraphOutputs.Metallic:            surfaceData.metallic =				graphOutputs.Metallic;
-//                                  		surfaceData.thickness =             graphOutputs.Thickness
-//		                                    surfaceData.diffusionProfile =      graphOutputs.DiffusionProfile
-//                                          surfaceData.subsurfaceMask =        graphOutputs.SubsurfaceMask
+        //                                  surfaceData.ambientOcclusion =      graphOutputs.AmbientOcclusion;
+        $GraphOutputs.Metallic:             surfaceData.metallic =              graphOutputs.Metallic;
+        //                                  surfaceData.thickness =             graphOutputs.Thickness
+        //                                  surfaceData.diffusionProfile =      graphOutputs.DiffusionProfile
+        //                                  surfaceData.subsurfaceMask =        graphOutputs.SubsurfaceMask
 
         // These static material feature allow compile time optimization
         surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
