@@ -6,6 +6,7 @@ using UnityEngine;
 namespace UnityEditor.ShaderGraph
 {
     [Serializable]
+    [FormerName("UnityEditor.ShaderGraph.TextureShaderProperty")]
     public class Texture2DShaderProperty : AbstractShaderProperty<SerializableTexture>
     {
         [SerializeField]

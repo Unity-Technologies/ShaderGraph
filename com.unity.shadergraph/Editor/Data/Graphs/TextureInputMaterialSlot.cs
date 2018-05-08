@@ -8,6 +8,7 @@ using UnityEngine.Experimental.UIElements;
 namespace UnityEditor.ShaderGraph
 {
     [Serializable]
+    [FormerName("UnityEditor.ShaderGraph.Texture2DInputMaterialSlot")]
     public class TextureInputMaterialSlot : TextureMaterialSlot
     {
         [SerializeField]
