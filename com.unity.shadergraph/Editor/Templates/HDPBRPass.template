@@ -193,12 +193,14 @@ ${Graph}
             $GraphInputs.TangentSpaceViewDirection: output.TangentSpaceViewDirection =   mul(tangentSpaceTransform, output.WorldSpaceViewDirection);
 
             // TODO: FragInputs.positionWS is badly named -- it's camera relative, not in world space
+            // we have to fix it up here to match graph input expectations
             $GraphInputs.WorldSpacePosition:        output.WorldSpacePosition =          input.positionWS + _WorldSpaceCameraPos;
             $GraphInputs.ObjectSpacePosition:       output.ObjectSpacePosition =         mul(unity_WorldToObject, float4(input.positionWS + _WorldSpaceCameraPos, 1.0f)).xyz;
             $GraphInputs.ViewSpacePosition:         float4 posViewSpace =                mul(UNITY_MATRIX_V, float4(input.positionWS, 1.0f));
             $GraphInputs.ViewSpacePosition:         output.ViewSpacePosition =           posViewSpace.xyz / posViewSpace.w;
             $GraphInputs.TangentSpacePosition:      output.TangentSpacePosition =        float3(0.0f, 0.0f, 0.0f);
-            
+
+            // TODO: positionSS is SV_Position, graph input expects screenPosition to be 0..1 across the active viewport (?)
             $GraphInputs.screenPosition:            output.screenPosition = input.positionSS;
             
             $GraphInputs.uv0:                       output.uv0 =    float4(input.texCoord0, 0.0f, 0.0f);
@@ -228,11 +230,12 @@ ${Graph}
         // copy across graph values, if defined
         $GraphOutputs.Albedo:               surfaceData.baseColor =             graphOutputs.Albedo;
         $GraphOutputs.Smoothness:           surfaceData.perceptualSmoothness =  graphOutputs.Smoothness;
-        //                                  surfaceData.ambientOcclusion =      graphOutputs.AmbientOcclusion;
+        $GraphOutputs.Occlusion:            surfaceData.ambientOcclusion =      graphOutputs.Occlusion;
         $GraphOutputs.Metallic:             surfaceData.metallic =              graphOutputs.Metallic;
-        //                                  surfaceData.thickness =             graphOutputs.Thickness
-        //                                  surfaceData.diffusionProfile =      graphOutputs.DiffusionProfile
-        //                                  surfaceData.subsurfaceMask =        graphOutputs.SubsurfaceMask
+        //                                  surfaceData.thickness =             graphOutputs.Thickness;
+        //                                  surfaceData.diffusionProfile =      graphOutputs.DiffusionProfile;
+        //                                  surfaceData.subsurfaceMask =        graphOutputs.SubsurfaceMask;
+        $GraphOutputs.Specular:             surfaceData.specularColor =         graphOutputs.Specular;
 
         // These static material feature allow compile time optimization
         surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
@@ -268,7 +271,6 @@ ${Graph}
 
         // Init other parameters
         surfaceData.anisotropy = 0;
-        surfaceData.specularColor = float3(0.0, 0.0, 0.0);
         surfaceData.coatMask = 0.0f;
         surfaceData.iridescenceThickness = 0.0;
         surfaceData.iridescenceMask = 1.0;
