@@ -311,7 +311,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         {
             var subGraphNode = node as SubGraphNode;
             if (subGraphNode != null && subGraphNode.subGraphAsset != null)
-                title = subGraphNode.subGraphAsset.name;
+                title = subGraphNode.subGraphAsset.name + " (sub)";
             else
                 title = node.name;
         }
