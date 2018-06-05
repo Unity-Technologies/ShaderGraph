@@ -14,22 +14,14 @@ namespace UnityEditor.ShaderGraph
             propType = type;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
         struct Data
         {
-            [FieldOffset(0)]
             public Color colorValue;
-            [FieldOffset(0)]
             public Texture textureValue;
-            [FieldOffset(0)]
             public Cubemap cubemapValue;
-            [FieldOffset(0)]
             public Gradient gradientValue;
-            [FieldOffset(0)]
             public Vector4 vector4Value;
-            [FieldOffset(0)]
             public float floatValue;
-            [FieldOffset(0)]
             public bool booleanValue;
         }
 
